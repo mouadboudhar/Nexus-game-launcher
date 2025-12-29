@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="rootContainer"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.nexus.client.controller.LibraryController"
+      styleClass="content-view">
+
+    <!-- Top Header/Toolbar -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="16">
+        <padding><Insets top="0" right="32" bottom="0" left="32"/></padding>
+
+        <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
+            <ImageView fitWidth="20" fitHeight="20" preserveRatio="true">
+                <Image url="@../../../../assets/library.png"/>
+            </ImageView>
+            <Label text="Library" styleClass="view-title"/>
+            <Label fx:id="gameCountLabel" text="12 GAMES" styleClass="game-count-badge"/>
+        </HBox>
+
+        <HBox alignment="CENTER_RIGHT" spacing="16">
+            <!-- Search Field -->
+            <HBox styleClass="search-container" alignment="CENTER_LEFT">
+                <ImageView fitWidth="16" fitHeight="16" preserveRatio="true" styleClass="search-icon-img">
+                    <Image url="@../../../../assets/loop.png"/>
+                </ImageView>
+                <TextField fx:id="searchField"
+                           promptText="Filter games..."
+                           styleClass="search-field"/>
+            </HBox>
+
+            <!-- Add Game Button -->
+            <Button fx:id="addGameButton"
+                    text="Add Game"
+                    styleClass="primary-button"
+                    onAction="#openAddGameDialog">
+                <graphic>
+                    <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                        <Image url="@../../../../assets/add.png"/>
+                    </ImageView>
+                </graphic>
+            </Button>
+        </HBox>
+    </HBox>
+
+    <!-- Scrollable Games Grid -->
+    <ScrollPane styleClass="games-scroll-pane" fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox alignment="TOP_CENTER" styleClass="games-grid-container">
+            <FlowPane fx:id="gamesGrid"
+                      styleClass="games-grid"
+                      hgap="24"
+                      vgap="24"
+                      alignment="CENTER">
+                <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+            </FlowPane>
+        </VBox>
+    </ScrollPane>
+
+</VBox>
+

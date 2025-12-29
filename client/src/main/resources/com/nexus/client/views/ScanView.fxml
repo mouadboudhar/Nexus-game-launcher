@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.nexus.client.controller.ScanController"
+      styleClass="content-view, scan-view"
+      alignment="CENTER">
+
+    <VBox styleClass="scan-container" spacing="24" alignment="CENTER" maxWidth="480">
+        <padding><Insets top="48" right="48" bottom="48" left="48"/></padding>
+
+        <!-- Icon -->
+        <StackPane styleClass="scan-icon-container">
+            <ImageView fitWidth="48" fitHeight="48" preserveRatio="true">
+                <Image url="@../../../../assets/loop.png"/>
+            </ImageView>
+        </StackPane>
+
+        <!-- Title -->
+        <Label text="Scan for Games" styleClass="scan-title"/>
+
+        <!-- Description -->
+        <Label text="Select which stores you want to scan for installed games."
+               styleClass="scan-description"
+               wrapText="true"
+               textAlignment="CENTER"/>
+
+        <!-- Store Options -->
+        <VBox spacing="12" styleClass="store-options">
+
+            <!-- Steam Option -->
+            <HBox styleClass="store-option" alignment="CENTER_LEFT" spacing="12">
+                <CheckBox fx:id="steamCheckbox" selected="true" styleClass="store-checkbox"/>
+                <ImageView fitWidth="24" fitHeight="24" preserveRatio="true">
+                    <Image url="@../../../../assets/steam.png"/>
+                </ImageView>
+                <VBox HBox.hgrow="ALWAYS" spacing="2">
+                    <Label text="Steam Library" styleClass="store-name"/>
+                    <Label fx:id="steamPathLabel" text="C:\Program Files\Steam" styleClass="store-path"/>
+                </VBox>
+                <Button text="Browse" styleClass="browse-button" onAction="#onBrowseSteam"/>
+            </HBox>
+
+            <!-- Epic Option -->
+            <HBox styleClass="store-option" alignment="CENTER_LEFT" spacing="12">
+                <CheckBox fx:id="epicCheckbox" selected="true" styleClass="store-checkbox"/>
+                <ImageView fitWidth="24" fitHeight="24" preserveRatio="true">
+                    <Image url="@../../../../assets/epic.png"/>
+                </ImageView>
+                <VBox HBox.hgrow="ALWAYS" spacing="2">
+                    <Label text="Epic Games Store" styleClass="store-name"/>
+                    <Label fx:id="epicPathLabel" text="C:\ProgramData\Epic" styleClass="store-path"/>
+                </VBox>
+                <Button text="Browse" styleClass="browse-button" onAction="#onBrowseEpic"/>
+            </HBox>
+
+        </VBox>
+
+        <!-- Scan Button -->
+        <Button fx:id="scanButton"
+                text="Start Scan"
+                styleClass="primary-button, scan-button"
+                onAction="#onStartScan"
+                maxWidth="Infinity">
+            <graphic>
+                <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                    <Image url="@../../../../assets/loop.png"/>
+                </ImageView>
+            </graphic>
+        </Button>
+
+        <!-- Progress Indicator -->
+        <ProgressIndicator fx:id="scanProgress" visible="false" styleClass="scan-progress"/>
+
+        <!-- Status Label -->
+        <Label fx:id="scanStatusLabel" text="" styleClass="scan-status"/>
+
+    </VBox>
+
+</VBox>
+

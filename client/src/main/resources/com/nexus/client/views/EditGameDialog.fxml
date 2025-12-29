@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.nexus.client.controller.EditGameDialogController"
+      styleClass="dialog-overlay"
+      alignment="CENTER">
+
+    <!-- Dialog Container -->
+    <VBox styleClass="dialog-container" spacing="24" maxWidth="500">
+        <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <Label text="✏️" styleClass="dialog-icon"/>
+            <Label text="Edit Game" styleClass="dialog-title"/>
+        </HBox>
+
+        <!-- Form -->
+        <VBox spacing="20">
+
+            <!-- Game Title -->
+             <VBox spacing="8">
+                <Label text="Game Title" styleClass="form-label"/>
+                <TextField fx:id="gameTitleField"
+                           promptText="Enter game title..."
+                           styleClass="form-field"/>
+            </VBox>
+
+            <!-- Executable Path -->
+            <VBox spacing="8">
+                <Label text="Executable Path" styleClass="form-label"/>
+                <HBox spacing="8">
+                    <TextField fx:id="executablePathField"
+                               promptText="Select .exe file..."
+                               styleClass="form-field"
+                               HBox.hgrow="ALWAYS"
+                               editable="false"/>
+                    <Button fx:id="browseButton"
+                            text="Browse"
+                            styleClass="secondary-button"
+                            onAction="#onBrowse"/>
+                </HBox>
+            </VBox>
+
+            <!-- Cover Image URL -->
+            <VBox spacing="8">
+                <Label text="Cover Image URL (optional)" styleClass="form-label"/>
+                <TextField fx:id="coverImageField"
+                           promptText="https://example.com/cover.jpg"
+                           styleClass="form-field"/>
+            </VBox>
+
+            <!-- Developer -->
+            <VBox spacing="8">
+                <Label text="Developer" styleClass="form-label"/>
+                <TextField fx:id="developerField"
+                           promptText="Enter developer name..."
+                           styleClass="form-field"/>
+            </VBox>
+
+            <!-- Description -->
+            <VBox spacing="8">
+                <Label text="Description" styleClass="form-label"/>
+                <TextArea fx:id="descriptionArea"
+                          promptText="Enter game description..."
+                          styleClass="form-field, form-textarea"
+                          prefRowCount="3"
+                          wrapText="true"/>
+            </VBox>
+
+            <!-- Platform Selection -->
+            <VBox spacing="8">
+                <Label text="Platform" styleClass="form-label"/>
+                <ComboBox fx:id="platformCombo"
+                          styleClass="form-combo"
+                          maxWidth="Infinity"/>
+            </VBox>
+
+            <!-- Error Label -->
+            <Label fx:id="errorLabel"
+                   text=""
+                   styleClass="error-label"
+                   visible="false"/>
+        </VBox>
+
+        <!-- Action Buttons -->
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button fx:id="deleteButton"
+                    text="Delete"
+                    styleClass="danger-button"
+                    onAction="#onDelete"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="cancelButton"
+                    text="Cancel"
+                    styleClass="secondary-button"
+                    onAction="#onCancel"/>
+            <Button fx:id="saveButton"
+                    text="Save Changes"
+                    styleClass="primary-button"
+                    onAction="#onSave"/>
+        </HBox>
+
+    </VBox>
+
+</VBox>
+

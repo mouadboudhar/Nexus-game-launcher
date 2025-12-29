@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane fx:id="rootPane"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.nexus.client.controller.MainController"
+            styleClass="root-pane">
+    <top>
+        <HBox styleClass="title-bar" alignment="CENTER_RIGHT" prefHeight="32.0">
+            <!-- Window Controls -->
+            <HBox alignment="CENTER" spacing="8.0" style="-fx-padding: 0 12 0 0;">
+                <Button styleClass="window-control-btn, minimize-btn" onAction="#handleMinimize"/>
+                <Button styleClass="window-control-btn, maximize-btn" onAction="#handleMaximize"/>
+                <Button styleClass="window-control-btn, close-btn" onAction="#handleClose"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- Left Sidebar -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar" prefWidth="256">
+
+            <!-- Logo Area -->
+            <HBox fx:id="logoContainer" styleClass="logo-container" alignment="CENTER_LEFT" spacing="12">
+                <padding><Insets top="0" right="24" bottom="0" left="24"/></padding>
+                <StackPane styleClass="logo-icon" prefWidth="32" prefHeight="32">
+                    <Label text="N" styleClass="logo-letter"/>
+                </StackPane>
+                <Label text="Nexus" styleClass="logo-text"/>
+            </HBox>
+
+            <!-- Navigation Items -->
+            <VBox styleClass="nav-container" spacing="4" VBox.vgrow="ALWAYS">
+                <padding><Insets top="24" right="12" bottom="24" left="12"/></padding>
+
+                <Button fx:id="navLibrary"
+                        text="Library"
+                        styleClass="nav-button, nav-button-active"
+                        onAction="#onNavLibrary"
+                        maxWidth="Infinity">
+                    <graphic>
+                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                            <Image url="@../../../../assets/library.png"/>
+                        </ImageView>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="navScan"
+                        text="Scan Games"
+                        styleClass="nav-button"
+                        onAction="#onNavScan"
+                        maxWidth="Infinity">
+                    <graphic>
+                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                            <Image url="@../../../../assets/loop.png"/>
+                        </ImageView>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="navFavorites"
+                        text="Favorites"
+                        styleClass="nav-button"
+                        onAction="#onNavFavorites"
+                        maxWidth="Infinity">
+                    <graphic>
+                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                            <Image url="@../../../../assets/favorite.png"/>
+                        </ImageView>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="navSettings"
+                        text="Settings"
+                        styleClass="nav-button"
+                        onAction="#onNavSettings"
+                        maxWidth="Infinity">
+                    <graphic>
+                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                            <Image url="@../../../../assets/settings.png"/>
+                        </ImageView>
+                    </graphic>
+                </Button>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- Center Content Area (Views will be loaded here) -->
+    <center>
+        <!-- Content loaded dynamically -->
+    </center>
+
+</BorderPane>
+
