@@ -1,56 +1,70 @@
 # Nexus Launcher
 
-A modern game library desktop application built with JavaFX.
+A modern game library desktop application built with JavaFX, Hibernate, and SQLite.
 
 ## Project Structure
 
 ```
 NexusLauncher/
-├── client/                    # JavaFX client application
-│   └── src/main/
-│       ├── java/com/nexus/client/
-│       │   ├── NexusLauncherApp.java    # Main entry point
-│       │   ├── component/               # Custom UI components
-│       │   │   └── GameCard.java
-│       │   ├── controller/              # View controllers
-│       │   │   ├── MainController.java
-│       │   │   ├── LibraryController.java
-│       │   │   ├── GameDetailsController.java
-│       │   │   ├── ScanController.java
-│       │   │   ├── FavoritesController.java
-│       │   │   ├── SettingsController.java
-│       │   │   ├── AddGameDialogController.java
-│       │   │   └── EditGameDialogController.java
-│       │   └── service/
-│       │       ├── CombinedMetadataService.java  # Dynamic API metadata
-│       │       ├── GameLauncher.java             # Game execution
-│       │       ├── GameService.java              # Business logic
-│       │       ├── MetadataService.java          # Interface
-│       │       ├── PlaceholderMetadataService.java # Fallback metadata
-│       │       ├── ScannerService.java           # Game detection
-│       │       └── ScanTask.java                 # Background scanning
-│       └── resources/com/nexus/client/
-│           ├── views/                   # FXML layout files
+├── src/main/
+│   ├── java/
+│   │   ├── module-info.java
+│   │   └── com/nexus/
+│   │       ├── client/                    # JavaFX client application
+│   │       │   ├── Main.java              # Bootstrap entry point
+│   │       │   ├── NexusLauncherApp.java  # Main JavaFX application
+│   │       │   ├── component/             # Custom UI components
+│   │       │   │   └── GameCard.java
+│   │       │   ├── controller/            # View controllers
+│   │       │   │   ├── MainController.java
+│   │       │   │   ├── LibraryController.java
+│   │       │   │   ├── GameDetailsController.java
+│   │       │   │   ├── ScanController.java
+│   │       │   │   ├── FavoritesController.java
+│   │       │   │   ├── SettingsController.java
+│   │       │   │   ├── AddGameDialogController.java
+│   │       │   │   └── EditGameDialogController.java
+│   │       │   ├── service/               # Business logic services
+│   │       │   │   ├── CombinedMetadataService.java
+│   │       │   │   ├── GameLauncher.java
+│   │       │   │   ├── GameService.java
+│   │       │   │   ├── MetadataService.java
+│   │       │   │   ├── PlaceholderMetadataService.java
+│   │       │   │   ├── ScannerService.java
+│   │       │   │   └── ScanTask.java
+│   │       │   └── util/
+│   │       │       └── PlaceholderImageUtil.java
+│   │       ├── model/                     # Entity models
+│   │       │   ├── Game.java
+│   │       │   └── AppSettings.java
+│   │       ├── repository/                # Data access layer
+│   │       │   ├── GameRepository.java
+│   │       │   └── SettingsRepository.java
+│   │       └── util/
+│   │           └── HibernateUtil.java
+│   └── resources/
+│       ├── hibernate.cfg.xml              # Hibernate configuration
+│       ├── assets/                        # Icons and images
+│       └── com/nexus/client/
+│           ├── views/                     # FXML layout files
 │           └── styles/
-│               └── application.css      # Dark theme stylesheet
-├── shared/                    # Shared models & repositories
-│   └── src/main/java/com/nexus/shared/
-│       ├── model/
-│       │   ├── Game.java
-│       │   └── AppSettings.java
-│       ├── repository/
-│       │   ├── GameRepository.java
-│       │   └── SettingsRepository.java
-│       └── util/
-│           └── HibernateUtil.java
-└── pom.xml                    # Parent Maven POM
+│               └── application.css        # Dark theme stylesheet
+├── pom.xml                                # Maven build configuration
+├── nexus.db                               # SQLite database (auto-created)
+└── README.md
 ```
+
+## Tech Stack
+
+- **Frontend**: JavaFX 21 with FXML
+- **Database**: SQLite with Hibernate ORM 6.4
+- **Build**: Maven
+- **Java**: 21+
 
 ## Requirements
 
 - Java 21 or later
 - Maven 3.8+
-- JavaFX 21
 
 ## Building the Project
 
@@ -63,25 +77,24 @@ mvn clean install
 
 ### Using Maven
 ```bash
-cd client
 mvn javafx:run
 ```
 
 ### Using IDE (IntelliJ IDEA)
 1. Open the project root folder in IntelliJ IDEA
 2. Wait for Maven to import all dependencies
-3. If modules aren't detected, go to File → Reload All from Disk, then reimport Maven
-4. Run `NexusLauncherApp.java` from the client module
+3. Run `Main.java` or `NexusLauncherApp.java`
 
 ## Features
 
 ### Implemented Views
 - **Library View**: Grid display of game cards with search and filter
 - **Game Details View**: Full game information with hero banner
-- **Scan View**: UI to scan Steam/Epic libraries (mock)
+- **Scan View**: UI to scan Steam/Epic libraries
 - **Favorites View**: Shows favorited games
 - **Settings View**: Toggle switches for app preferences
 - **Add Game Dialog**: Modal to manually add games
+- **Edit Game Dialog**: Modal to edit game details
 
 ### Navigation
 - Sidebar navigation with Library, Scan, Favorites, and Settings
@@ -89,10 +102,16 @@ mvn javafx:run
 - Back button to return to library
 
 ### Styling
-- Dark theme matching the HTML mockup
+- Dark theme matching modern game launchers
 - Colors: Gray-900 (#111827) background, Indigo-600 (#4f46e5) accents
 - Custom scrollbars, buttons, and form elements
 - Hover effects and animations on game cards
+- Rounded window corners with custom title bar
+
+### Game Detection
+- Automatic Steam library scanning
+- Automatic Epic Games library scanning
+- Manual game addition support
 
 ## Game Metadata
 
@@ -112,15 +131,16 @@ The application automatically fetches game metadata (covers, descriptions, devel
   4. Add your Client ID and Client Secret
 
 ### Fallback
-- Hardcoded metadata for 100+ popular games
-- Ensures common games always have covers
+- Placeholder images via placehold.co API for games without covers
+- Displays game title on styled placeholder background
 
-## Next Steps (Future Features)
+## Database
 
-- [ ] System tray integration
-- [ ] Game time tracking
-- [ ] Cloud sync for favorites/settings
-- [ ] More platform support (GOG, Xbox Game Pass)
+The application uses SQLite for local storage. The database file (`nexus.db`) is automatically created in the project root on first run.
+
+### Tables
+- `games` - Stores game information
+- `app_settings` - Stores application preferences
 
 ## License
 

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<StackPane fx:id="rootPane"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.nexus.client.controller.GameDetailsController"
+           styleClass="game-details-view">
+
+    <!-- Hero Background Image (Blurred) -->
+    <ImageView fx:id="heroBackground"
+               preserveRatio="false"
+               styleClass="hero-background">
+        <effect>
+            <GaussianBlur radius="30"/>
+        </effect>
+    </ImageView>
+
+    <!-- Dark Overlay -->
+    <Region styleClass="hero-overlay"/>
+
+    <!-- Main Content -->
+    <VBox styleClass="details-content" spacing="0">
+
+        <!-- Top Bar with Back Button -->
+        <HBox styleClass="details-header" alignment="CENTER_LEFT" spacing="16">
+            <padding><Insets top="16" right="32" bottom="16" left="32"/></padding>
+
+            <Button fx:id="backButton"
+                    text="← Back to Library"
+                    styleClass="back-button"
+                    onAction="#onBackClick"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="favoriteButton"
+                    styleClass="icon-button, favorite-button"
+                    onAction="#onFavoriteClick">
+                <graphic>
+                    <ImageView fx:id="favoriteIcon" fitWidth="20" fitHeight="20" preserveRatio="true">
+                        <Image url="@../../../../assets/favorite.png"/>
+                    </ImageView>
+                </graphic>
+            </Button>
+        </HBox>
+
+        <!-- Game Info Section -->
+        <HBox styleClass="game-info-section" spacing="48" alignment="TOP_LEFT" VBox.vgrow="ALWAYS">
+            <padding><Insets top="32" right="64" bottom="64" left="64"/></padding>
+
+            <!-- Cover Art -->
+            <VBox alignment="TOP_CENTER" spacing="16">
+                <StackPane styleClass="cover-container">
+                    <ImageView fx:id="coverImage"
+                               fitWidth="240"
+                               fitHeight="320"
+                               preserveRatio="false"
+                               styleClass="cover-image">
+                    </ImageView>
+                    <Rectangle width="240" height="320" arcWidth="12" arcHeight="12"
+                               styleClass="cover-border" fill="TRANSPARENT"
+                               stroke="#374151" strokeWidth="1"/>
+                </StackPane>
+
+                <!-- Status Badge -->
+                <HBox fx:id="statusBadgeContainer" alignment="CENTER" spacing="6">
+                    <Label fx:id="statusLabel" text="Ready to Play" styleClass="status-badge"/>
+                </HBox>
+            </VBox>
+
+            <!-- Game Details Text -->
+            <VBox spacing="24" HBox.hgrow="ALWAYS" maxWidth="700">
+
+                <!-- Title -->
+                <Label fx:id="titleLabel" text="Game Title" styleClass="game-title"/>
+
+                <!-- Action Buttons -->
+                <HBox spacing="16">
+                    <Button fx:id="playButton"
+                            text="PLAY"
+                            styleClass="primary-button, play-large-button"
+                            onAction="#onPlayClick">
+                        <graphic>
+                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                                <Image url="@../../../../assets/play.png"/>
+                            </ImageView>
+                        </graphic>
+                    </Button>
+                    <Button fx:id="editButton"
+                            text="Edit"
+                            styleClass="secondary-button, play-large-button"
+                            onAction="#onEditClick">
+                        <graphic>
+                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                                <Image url="@../../../../assets/edit.png"/>
+                            </ImageView>
+                        </graphic>
+                    </Button>
+                </HBox>
+
+                <!-- Description -->
+                <VBox spacing="8">
+                    <Label text="Description" styleClass="section-label"/>
+                    <Label fx:id="descriptionLabel"
+                           text="Game description goes here..."
+                           styleClass="game-description"
+                           wrapText="true"/>
+                </VBox>
+
+                <!-- Metadata Grid -->
+                <HBox spacing="48" styleClass="metadata-section">
+                    <VBox spacing="4">
+                        <Label text="Developer" styleClass="meta-label"/>
+                        <Label fx:id="developerLabel" text="Unknown" styleClass="meta-value"/>
+                    </VBox>
+
+                    <VBox spacing="4">
+                        <Label text="Platform" styleClass="meta-label"/>
+                        <HBox fx:id="platformBadge" styleClass="platform-badge-large" alignment="CENTER_LEFT" spacing="8">
+                            <Label fx:id="platformLabel" text="Steam" styleClass="meta-value"/>
+                        </HBox>
+                    </VBox>
+
+                    <VBox spacing="4">
+                        <Label text="Release Date" styleClass="meta-label"/>
+                        <Label fx:id="releaseDateLabel" text="Unknown" styleClass="meta-value"/>
+                    </VBox>
+                </HBox>
+
+            </VBox>
+        </HBox>
+
+    </VBox>
+
+</StackPane>
+
