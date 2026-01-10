@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.nexus.controller.SettingsController"
+            styleClass="content-view, settings-scroll"
+            fitToWidth="true">
+
+    <VBox styleClass="settings-view" spacing="32">
+        <padding><Insets top="48" right="48" bottom="48" left="48"/></padding>
+
+        <!-- Title -->
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <ImageView fitWidth="24" fitHeight="24" preserveRatio="true">
+                <Image url="@../../../assets/settings.png"/>
+            </ImageView>
+            <Label text="Settings" styleClass="settings-title"/>
+        </HBox>
+
+        <!-- Settings Container -->
+        <VBox styleClass="settings-container" spacing="32" maxWidth="700">
+
+            <!-- General Section -->
+            <VBox spacing="16">
+                <Label text="General" styleClass="settings-section-title"/>
+                <Separator styleClass="section-separator"/>
+
+                <!-- Launch on Startup -->
+                <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Launch on Startup" styleClass="setting-name"/>
+                        <Label text="Start Nexus minimized when Windows starts" styleClass="setting-description"/>
+                    </VBox>
+                    <HBox fx:id="launchOnStartupToggle" styleClass="toggle-switch, toggle-on" alignment="CENTER">
+                        <Circle radius="8" styleClass="toggle-knob"/>
+                    </HBox>
+                </HBox>
+
+                <!-- Close to Tray -->
+                <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Close to Tray" styleClass="setting-name"/>
+                        <Label text="Keep running in background when closed" styleClass="setting-description"/>
+                    </VBox>
+                    <HBox fx:id="closeToTrayToggle" styleClass="toggle-switch, toggle-off" alignment="CENTER">
+                        <Circle radius="8" styleClass="toggle-knob"/>
+                    </HBox>
+                </HBox>
+            </VBox>
+
+            <!-- Appearance Section -->
+            <VBox spacing="16">
+                <Label text="Appearance" styleClass="settings-section-title"/>
+                <Separator styleClass="section-separator"/>
+
+                <!-- Dark Mode -->
+                <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Dark Mode" styleClass="setting-name"/>
+                        <Label text="Enable dark theme for the interface" styleClass="setting-description"/>
+                    </VBox>
+                    <HBox fx:id="darkModeToggle" styleClass="toggle-switch, toggle-on" alignment="CENTER">
+                        <Circle radius="8" styleClass="toggle-knob"/>
+                    </HBox>
+                </HBox>
+            </VBox>
+
+            <!-- Data Management Section -->
+            <VBox spacing="16">
+                <Label text="Data Management" styleClass="settings-section-title"/>
+                <Separator styleClass="section-separator"/>
+
+                <!-- Clear Library -->
+                <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Clear Library &amp; Rescan" styleClass="setting-name"/>
+                        <Label text="Remove all scanned games and rescan from scratch. Manually added games will be preserved." styleClass="setting-description"/>
+                    </VBox>
+                    <Button fx:id="clearLibraryButton" text="Clear &amp; Rescan" styleClass="danger-button" onAction="#onClearLibrary"/>
+                </HBox>
+
+                <!-- Database Info -->
+                <HBox styleClass="setting-row" alignment="CENTER_LEFT" spacing="16">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Database Location" styleClass="setting-name"/>
+                        <Label fx:id="dbPathLabel" text="nexus.db" styleClass="setting-description, db-path"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <!-- About Section -->
+            <VBox spacing="16">
+                <Label text="About" styleClass="settings-section-title"/>
+                <Separator styleClass="section-separator"/>
+
+                <VBox spacing="8">
+                    <Label text="Nexus Launcher v1.0.0" styleClass="about-version"/>
+                    <Label text="A unified game library for all your games." styleClass="about-description"/>
+                </VBox>
+            </VBox>
+
+        </VBox>
+    </VBox>
+
+</ScrollPane>
+

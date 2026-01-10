@@ -76,7 +76,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.nexus.launcher/com.nexus.client.NexusLauncherApp</mainClass>
+                    <mainClass>com.nexus.launcher/com.nexus.NexusLauncherApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>
