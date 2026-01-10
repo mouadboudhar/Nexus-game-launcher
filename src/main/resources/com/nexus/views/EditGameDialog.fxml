@@ -3,6 +3,7 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -16,7 +17,7 @@
 
         <!-- Header -->
         <HBox alignment="CENTER_LEFT" spacing="12">
-            <Label text="✏️" styleClass="dialog-icon"/>
+            <FontIcon iconLiteral="fas-edit" iconSize="24" styleClass="dialog-icon"/>
             <Label text="Edit Game" styleClass="dialog-title"/>
         </HBox>
 

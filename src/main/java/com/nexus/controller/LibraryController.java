@@ -22,6 +22,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.net.URL;
@@ -248,17 +250,9 @@ public class LibraryController implements Initializable {
         VBox content = new VBox(8);
         content.setAlignment(javafx.geometry.Pos.CENTER);
 
-        // Use add.png icon instead of + symbol
-        javafx.scene.image.ImageView addIcon = new javafx.scene.image.ImageView();
-        addIcon.setFitWidth(36);
-        addIcon.setFitHeight(36);
-        addIcon.setPreserveRatio(true);
+        // Use FontIcon for the add icon
+        FontIcon addIcon = FontIcon.of(FontAwesomeSolid.PLUS, 36);
         addIcon.setOpacity(0.6);
-        try {
-            addIcon.setImage(new javafx.scene.image.Image(getClass().getResourceAsStream("/assets/add.png")));
-        } catch (Exception e) {
-            // Fallback to label if icon not found
-        }
         addIcon.getStyleClass().add("placeholder-icon");
 
         Label addText = new Label("Add Game");

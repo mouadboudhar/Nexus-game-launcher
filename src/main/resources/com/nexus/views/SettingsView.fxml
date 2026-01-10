@@ -2,9 +2,9 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -17,9 +17,7 @@
 
         <!-- Title -->
         <HBox alignment="CENTER_LEFT" spacing="12">
-            <ImageView fitWidth="24" fitHeight="24" preserveRatio="true">
-                <Image url="@../../../assets/settings.png"/>
-            </ImageView>
+            <FontIcon iconLiteral="fas-cog" iconSize="24" styleClass="settings-header-icon"/>
             <Label text="Settings" styleClass="settings-title"/>
         </HBox>
 

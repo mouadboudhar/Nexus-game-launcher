@@ -21,6 +21,12 @@
 # Note: Without IGDB credentials, the app will:
 # - Use Steam API for all Steam games (works perfectly, no key needed)
 # - Search Steam for non-Steam games (often finds matches)
-# - Fall back to hardcoded metadata for popular games
+# - Only detect system games from known paths (Riot Games, Minecraft)
 # - Show "No description available" for unrecognized games
+#
+# WITH IGDB credentials, the app will additionally:
+# - Scan Windows Registry and validate ALL installed apps against IGDB
+# - Automatically detect standalone games (GOG, itch.io, old CD-ROM games, etc.)
+# - Provide rich metadata for non-Steam games
+# - Distinguish games from regular software (Blender = software, Sekiro = game)
 

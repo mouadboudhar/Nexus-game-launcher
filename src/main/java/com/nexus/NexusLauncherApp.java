@@ -1,5 +1,6 @@
 package com.nexus;
 
+import atlantafx.base.theme.PrimerDark;
 import com.nexus.util.HibernateUtil;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -22,6 +23,9 @@ public class NexusLauncherApp extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        // Set the AtlantaFX dark theme (must be done after toolkit initialization)
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+
         primaryStage = stage;
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("views/MainView.fxml"));

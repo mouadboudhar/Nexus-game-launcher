@@ -6,6 +6,7 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane fx:id="rootPane"
            xmlns="http://javafx.com/javafx/21"
@@ -33,9 +34,15 @@
             <padding><Insets top="16" right="32" bottom="16" left="32"/></padding>
 
             <Button fx:id="backButton"
-                    text="← Back to Library"
                     styleClass="back-button"
-                    onAction="#onBackClick"/>
+                    onAction="#onBackClick">
+                <graphic>
+                    <HBox alignment="CENTER" spacing="8">
+                        <FontIcon iconLiteral="fas-arrow-left" iconSize="14" styleClass="back-icon"/>
+                        <Label text="Back to Library" styleClass="back-button-text"/>
+                    </HBox>
+                </graphic>
+            </Button>
 
             <Region HBox.hgrow="ALWAYS"/>
 
@@ -43,9 +50,7 @@
                     styleClass="icon-button, favorite-button"
                     onAction="#onFavoriteClick">
                 <graphic>
-                    <ImageView fx:id="favoriteIcon" fitWidth="20" fitHeight="20" preserveRatio="true">
-                        <Image url="@../../../assets/favorite.png"/>
-                    </ImageView>
+                    <FontIcon fx:id="favoriteIcon" iconLiteral="fas-heart" iconSize="20" styleClass="favorite-icon"/>
                 </graphic>
             </Button>
         </HBox>
@@ -70,6 +75,7 @@
 
                 <!-- Status Badge -->
                 <HBox fx:id="statusBadgeContainer" alignment="CENTER" spacing="6">
+                    <FontIcon fx:id="statusIcon" iconLiteral="fas-check-circle" iconSize="14" styleClass="status-icon"/>
                     <Label fx:id="statusLabel" text="Ready to Play" styleClass="status-badge"/>
                 </HBox>
             </VBox>
@@ -87,9 +93,7 @@
                             styleClass="primary-button, play-large-button"
                             onAction="#onPlayClick">
                         <graphic>
-                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                                <Image url="@../../../assets/play.png"/>
-                            </ImageView>
+                            <FontIcon iconLiteral="fas-play" iconSize="18" styleClass="play-icon"/>
                         </graphic>
                     </Button>
                     <Button fx:id="editButton"
@@ -97,9 +101,7 @@
                             styleClass="secondary-button, play-large-button"
                             onAction="#onEditClick">
                         <graphic>
-                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                                <Image url="@../../../assets/edit.png"/>
-                            </ImageView>
+                            <FontIcon iconLiteral="fas-edit" iconSize="18" styleClass="edit-icon"/>
                         </graphic>
                     </Button>
                 </HBox>

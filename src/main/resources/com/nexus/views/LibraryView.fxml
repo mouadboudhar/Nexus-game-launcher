@@ -2,8 +2,8 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
@@ -16,9 +16,7 @@
             <padding><Insets top="0" right="32" bottom="0" left="32"/></padding>
 
             <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
-                <ImageView fitWidth="20" fitHeight="20" preserveRatio="true">
-                    <Image url="@../../../assets/library.png"/>
-                </ImageView>
+                <FontIcon iconLiteral="mdi2g-gamepad-variant" iconSize="20" styleClass="view-header-icon"/>
                 <Label text="Library" styleClass="view-title"/>
                 <Label fx:id="gameCountLabel" text="12 GAMES" styleClass="game-count-badge"/>
             </HBox>
@@ -26,9 +24,7 @@
             <HBox alignment="CENTER_RIGHT" spacing="16">
                 <!-- Search Field -->
                 <HBox styleClass="search-container" alignment="CENTER_LEFT">
-                    <ImageView fitWidth="16" fitHeight="16" preserveRatio="true" styleClass="search-icon-img">
-                        <Image url="@../../../assets/loop.png"/>
-                    </ImageView>
+                    <FontIcon iconLiteral="fas-search" iconSize="16" styleClass="search-icon"/>
                     <TextField fx:id="searchField"
                                promptText="Filter games..."
                                styleClass="search-field"/>
@@ -40,9 +36,7 @@
                         styleClass="primary-button"
                         onAction="#openAddGameDialog">
                     <graphic>
-                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
-                            <Image url="@../../../assets/add.png"/>
-                        </ImageView>
+                        <FontIcon iconLiteral="fas-plus" iconSize="16" styleClass="button-icon"/>
                     </graphic>
                 </Button>
             </HBox>

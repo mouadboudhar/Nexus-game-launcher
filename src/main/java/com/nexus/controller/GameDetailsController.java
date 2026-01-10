@@ -21,6 +21,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,13 +44,13 @@ public class GameDetailsController implements Initializable {
     @FXML private Label platformLabel;
     @FXML private Label releaseDateLabel;
     @FXML private Label statusLabel;
-    @FXML private ImageView statusIcon;
+    @FXML private FontIcon statusIcon;
     @FXML private HBox statusBadgeContainer;
     @FXML private Button playButton;
     @FXML private Button editButton;
     @FXML private Button backButton;
     @FXML private Button favoriteButton;
-    @FXML private ImageView favoriteIcon;
+    @FXML private FontIcon favoriteIcon;
     @FXML private HBox platformBadge;
 
     private MainController mainController;
@@ -95,7 +98,7 @@ public class GameDetailsController implements Initializable {
             statusLabel.setText("Ready to Play");
             statusLabel.getStyleClass().add("status-ready");
             if (statusIcon != null) {
-                statusIcon.setImage(new Image(getClass().getResourceAsStream("/assets/check.png")));
+                statusIcon.setIconCode(FontAwesomeSolid.CHECK_CIRCLE);
             }
             playButton.setText("PLAY");
             playButton.getStyleClass().remove("locate-button");
@@ -103,7 +106,7 @@ public class GameDetailsController implements Initializable {
             statusLabel.setText("Executable Missing");
             statusLabel.getStyleClass().add("status-missing");
             if (statusIcon != null) {
-                statusIcon.setImage(new Image(getClass().getResourceAsStream("/assets/folder.png")));
+                statusIcon.setIconCode(MaterialDesignF.FOLDER_ALERT);
             }
             playButton.setText("LOCATE");
             playButton.getStyleClass().add("locate-button");

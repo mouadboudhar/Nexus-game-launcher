@@ -5,37 +5,84 @@ import com.nexus.model.Game.Platform;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Combined metadata service that uses:
- * 1. Steam API for Steam games (no key required)
- * 2. IGDB API for non-Steam games (requires Twitch Client ID/Secret)
- *
- * IGDB Setup:
- * 1. Go to https://dev.twitch.tv/console/apps
- * 2. Create an application
- * 3. Get Client ID and Client Secret
- * 4. Create 'nexus.properties' in app directory with:
- *    igdb.client.id=YOUR_CLIENT_ID
- *    igdb.client.secret=YOUR_CLIENT_SECRET
+ * Metadata service using Steam API and IGDB API.
+ * Uses direct IGDB ID lookups for accuracy instead of fuzzy name matching.
  */
 public class CombinedMetadataService implements MetadataService {
 
+    // Known IGDB game IDs for popular games - no search needed, direct lookup
+    private static final Map<String, Integer> KNOWN_IGDB_IDS = new HashMap<>();
+    static {
+        // Riot Games
+        KNOWN_IGDB_IDS.put("league of legends", 115);
+        KNOWN_IGDB_IDS.put("valorant", 126459);
+        KNOWN_IGDB_IDS.put("legends of runeterra", 119171);
+        KNOWN_IGDB_IDS.put("teamfight tactics", 120227);
+
+        // Mojang
+        KNOWN_IGDB_IDS.put("minecraft", 121);
+        KNOWN_IGDB_IDS.put("minecraft dungeons", 113520);
+        KNOWN_IGDB_IDS.put("minecraft legends", 204642);
+
+        // miHoYo/HoYoverse
+        KNOWN_IGDB_IDS.put("genshin impact", 119277);
+        KNOWN_IGDB_IDS.put("honkai: star rail", 171536);
+        KNOWN_IGDB_IDS.put("honkai impact 3rd", 37582);
+        KNOWN_IGDB_IDS.put("zenless zone zero", 217590);
+
+        // Other popular games
+        KNOWN_IGDB_IDS.put("fortnite", 1905);
+        KNOWN_IGDB_IDS.put("roblox", 17767);
+        KNOWN_IGDB_IDS.put("osu!", 3510);
+        KNOWN_IGDB_IDS.put("counter-strike 2", 194078);
+        KNOWN_IGDB_IDS.put("dota 2", 126459);
+        KNOWN_IGDB_IDS.put("apex legends", 114455);
+        KNOWN_IGDB_IDS.put("overwatch 2", 152589);
+        KNOWN_IGDB_IDS.put("world of warcraft", 123);
+        KNOWN_IGDB_IDS.put("diablo iv", 121971);
+        KNOWN_IGDB_IDS.put("path of exile", 5);
+        KNOWN_IGDB_IDS.put("path of exile 2", 119388);
+        KNOWN_IGDB_IDS.put("warframe", 2357);
+        KNOWN_IGDB_IDS.put("destiny 2", 25657);
+        KNOWN_IGDB_IDS.put("final fantasy xiv", 393);
+        KNOWN_IGDB_IDS.put("the sims 4", 5765);
+        KNOWN_IGDB_IDS.put("ea sports fc 24", 252370);
+        KNOWN_IGDB_IDS.put("ea sports fc 25", 280882);
+        KNOWN_IGDB_IDS.put("rocket league", 9540);
+        KNOWN_IGDB_IDS.put("fall guys", 119324);
+        KNOWN_IGDB_IDS.put("among us", 68452);
+        KNOWN_IGDB_IDS.put("dead by daylight", 14913);
+        KNOWN_IGDB_IDS.put("pubg: battlegrounds", 22509);
+        KNOWN_IGDB_IDS.put("grand theft auto v", 1020);
+        KNOWN_IGDB_IDS.put("red dead redemption 2", 25076);
+        KNOWN_IGDB_IDS.put("cyberpunk 2077", 1877);
+        KNOWN_IGDB_IDS.put("elden ring", 119133);
+        KNOWN_IGDB_IDS.put("dark souls iii", 11133);
+        KNOWN_IGDB_IDS.put("sekiro: shadows die twice", 38050);
+        KNOWN_IGDB_IDS.put("baldur's gate 3", 119171);
+        KNOWN_IGDB_IDS.put("the witcher 3", 1942);
+        KNOWN_IGDB_IDS.put("hogwarts legacy", 119304);
+        KNOWN_IGDB_IDS.put("palworld", 217589);
+        KNOWN_IGDB_IDS.put("lethal company", 238091);
+    }
+
     private static final ConcurrentHashMap<String, CachedMetadata> cache = new ConcurrentHashMap<>();
-    private static final long CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+    private static final long CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     // Steam endpoints
     private static final String STEAM_APP_DETAILS = "https://store.steampowered.com/api/appdetails?appids=";
-    private static final String STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term=%s&cc=us&l=en";
     private static final String STEAM_COVER = "https://steamcdn-a.akamaihd.net/steam/apps/%s/library_600x900_2x.jpg";
     private static final String STEAM_HERO = "https://steamcdn-a.akamaihd.net/steam/apps/%s/library_hero.jpg";
 
@@ -44,22 +91,17 @@ public class CombinedMetadataService implements MetadataService {
     private static final String IGDB_COVERS = "https://api.igdb.com/v4/covers";
     private static final String TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 
-    // IGDB credentials (loaded from properties file)
     private String igdbClientId;
     private String igdbClientSecret;
     private String igdbAccessToken;
     private long tokenExpiry = 0;
 
-    // Fallback service for when APIs fail
     private final PlaceholderMetadataService fallbackService = new PlaceholderMetadataService();
 
     public CombinedMetadataService() {
         loadIgdbCredentials();
     }
 
-    /**
-     * Loads IGDB credentials from nexus.properties file.
-     */
     private void loadIgdbCredentials() {
         try {
             Path propsPath = Paths.get("nexus.properties");
@@ -71,8 +113,11 @@ public class CombinedMetadataService implements MetadataService {
                 igdbClientId = props.getProperty("igdb.client.id");
                 igdbClientSecret = props.getProperty("igdb.client.secret");
 
-                if (igdbClientId != null && igdbClientSecret != null) {
+                if (igdbClientId != null && !igdbClientId.startsWith("YOUR_") && igdbClientSecret != null) {
                     System.out.println("[CombinedMetadataService] IGDB credentials loaded");
+                } else {
+                    igdbClientId = null;
+                    igdbClientSecret = null;
                 }
             }
         } catch (Exception e) {
@@ -80,172 +125,151 @@ public class CombinedMetadataService implements MetadataService {
         }
     }
 
+    public boolean hasIgdbCredentials() {
+        return igdbClientId != null && !igdbClientId.isEmpty()
+            && igdbClientSecret != null && !igdbClientSecret.isEmpty();
+    }
+
     @Override
     public void applyMetadata(Game game) {
         if (game == null || game.getTitle() == null) return;
 
         String cacheKey = getCacheKey(game);
-
-        // Check cache first
         CachedMetadata cached = cache.get(cacheKey);
         if (cached != null && !cached.isExpired()) {
             applyFromCache(game, cached);
             return;
         }
 
-        // Try Steam first for Steam games or any game that might be on Steam
-        if (game.getPlatform() == Platform.STEAM || game.getAppId() != null) {
+        // For Steam games, use Steam API directly (most reliable)
+        if (game.getPlatform() == Platform.STEAM && game.getAppId() != null) {
             if (applySteamMetadata(game)) {
                 cacheResult(game);
                 return;
             }
         }
 
-        // Try IGDB for non-Steam games
-        if (igdbClientId != null && applyIgdbMetadata(game)) {
-            cacheResult(game);
-            return;
+        // Try IGDB with direct ID lookup
+        if (hasIgdbCredentials()) {
+            if (applyIgdbMetadataById(game)) {
+                cacheResult(game);
+                return;
+            }
         }
 
-        // Try Steam search as fallback (game might exist on Steam even if not installed via Steam)
-        if (applySteamSearchMetadata(game)) {
-            cacheResult(game);
-            return;
-        }
-
-        // Use hardcoded fallback as last resort
+        // Fallback to hardcoded data
         fallbackService.applyMetadata(game);
         cacheResult(game);
     }
 
     /**
-     * Applies metadata from Steam API using appId.
+     * Applies IGDB metadata using direct ID lookup.
+     * First checks known IDs, then does a precise search if needed.
      */
-    private boolean applySteamMetadata(Game game) {
-        String appId = game.getAppId();
-        if (appId == null || appId.isEmpty()) return false;
+    private boolean applyIgdbMetadataById(Game game) {
+        if (!ensureIgdbToken()) return false;
 
-        try {
-            // Set CDN image URLs
-            if (game.getCoverImageUrl() == null || game.getCoverImageUrl().isEmpty()) {
-                game.setCoverImageUrl(String.format(STEAM_COVER, appId));
-            }
-            if (game.getHeroImageUrl() == null || game.getHeroImageUrl().isEmpty()) {
-                game.setHeroImageUrl(String.format(STEAM_HERO, appId));
-            }
+        String titleLower = game.getTitle().toLowerCase().trim();
 
-            // Fetch details from Steam Store API
-            String response = httpGet(STEAM_APP_DETAILS + appId, null, null);
-            if (response != null && response.contains("\"success\":true")) {
-                parseSteamDetails(game, response);
-                return true;
+        // Check if we have a known IGDB ID for this game
+        Integer knownId = KNOWN_IGDB_IDS.get(titleLower);
+
+        // Also check partial matches for known games
+        if (knownId == null) {
+            for (Map.Entry<String, Integer> entry : KNOWN_IGDB_IDS.entrySet()) {
+                if (titleLower.contains(entry.getKey()) || entry.getKey().contains(titleLower)) {
+                    knownId = entry.getValue();
+                    System.out.println("[IGDB] Matched '" + game.getTitle() + "' to known game ID: " + knownId);
+                    break;
+                }
             }
-        } catch (Exception e) {
-            System.err.println("[CombinedMetadataService] Steam API error: " + e.getMessage());
         }
+
+        if (knownId != null) {
+            // Direct lookup by ID - fast and accurate
+            System.out.println("[IGDB] Using known ID " + knownId + " for: " + game.getTitle());
+            return fetchMetadataByIgdbId(game, knownId);
+        }
+
+        // If not a known game, do a precise search to find the ID first
+        Integer foundId = searchIgdbForGameId(game.getTitle());
+        if (foundId != null) {
+            System.out.println("[IGDB] Found ID " + foundId + " for: " + game.getTitle());
+            return fetchMetadataByIgdbId(game, foundId);
+        }
+
+        System.out.println("[IGDB] No match found for: " + game.getTitle());
         return false;
     }
 
     /**
-     * Searches Steam for a game and applies metadata.
+     * Searches IGDB to find the game ID. Returns only if there's a confident match.
      */
-    private boolean applySteamSearchMetadata(Game game) {
+    private Integer searchIgdbForGameId(String title) {
         try {
-            String encodedTitle = java.net.URLEncoder.encode(game.getTitle(), StandardCharsets.UTF_8);
-            String response = httpGet(String.format(STEAM_SEARCH, encodedTitle), null, null);
+            // Clean up the title for better search results
+            String cleanTitle = title
+                .replaceAll("\\s*[:\\-–]\\s*(Standard|Deluxe|Ultimate|Game of the Year|GOTY|Edition|Remastered|Definitive).*$", "")
+                .replaceAll("\\s+", " ")
+                .trim();
 
-            if (response != null && response.contains("\"items\"")) {
-                String appId = findBestSteamMatch(response, game.getTitle());
-                if (appId != null) {
-                    game.setAppId(appId);
-                    return applySteamMetadata(game);
+            // IGDB search query - get only the most relevant result
+            String query = String.format(
+                "search \"%s\"; fields id,name; where category = (0,8,9,10,11); limit 1;",
+                cleanTitle.replace("\"", "")
+            );
+
+            String response = igdbPost(IGDB_GAMES, query);
+            if (response == null || response.equals("[]")) return null;
+
+            // Extract the ID from the first (and only) result
+            Pattern idPattern = Pattern.compile("\"id\"\\s*:\\s*(\\d+)");
+            Pattern namePattern = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+
+            Matcher idMatcher = idPattern.matcher(response);
+            Matcher nameMatcher = namePattern.matcher(response);
+
+            if (idMatcher.find() && nameMatcher.find()) {
+                int id = Integer.parseInt(idMatcher.group(1));
+                String foundName = nameMatcher.group(1);
+
+                // Verify the match is reasonable (name similarity check)
+                String cleanFoundName = foundName.toLowerCase().replaceAll("[^a-z0-9]", "");
+                String cleanSearchName = cleanTitle.toLowerCase().replaceAll("[^a-z0-9]", "");
+
+                // Accept if names are similar enough
+                if (cleanFoundName.contains(cleanSearchName) || cleanSearchName.contains(cleanFoundName) ||
+                    calculateSimilarity(cleanFoundName, cleanSearchName) > 0.7) {
+                    System.out.println("[IGDB] Search matched '" + title + "' -> '" + foundName + "' (ID: " + id + ")");
+                    return id;
+                } else {
+                    System.out.println("[IGDB] Search result '" + foundName + "' doesn't match '" + title + "' well enough");
                 }
             }
         } catch (Exception e) {
-            System.err.println("[CombinedMetadataService] Steam search error: " + e.getMessage());
+            System.err.println("[IGDB] Search error: " + e.getMessage());
         }
-        return false;
+        return null;
     }
 
     /**
-     * Applies metadata from IGDB API.
+     * Fetches complete metadata from IGDB using the game ID.
      */
-    private boolean applyIgdbMetadata(Game game) {
-        if (igdbClientId == null || igdbClientSecret == null) return false;
-
+    private boolean fetchMetadataByIgdbId(Game game, int igdbId) {
         try {
-            // Get/refresh access token
-            if (!ensureIgdbToken()) return false;
+            // Fetch full game details by ID
+            String query = String.format(
+                "fields name,summary,cover.url,involved_companies.company.name,involved_companies.developer,first_release_date; where id = %d;",
+                igdbId
+            );
 
-            // Search for game
-            String query = "search \"" + game.getTitle().replace("\"", "") + "\"; " +
-                          "fields name,summary,cover,first_release_date,involved_companies.company.name; " +
-                          "limit 5;";
-
-            String response = httpPost(IGDB_GAMES, query, igdbClientId, igdbAccessToken);
+            String response = igdbPost(IGDB_GAMES, query);
             if (response == null || response.equals("[]")) return false;
 
-            // Parse first matching result
-            return parseIgdbGame(game, response);
-
-        } catch (Exception e) {
-            System.err.println("[CombinedMetadataService] IGDB error: " + e.getMessage());
-        }
-        return false;
-    }
-
-    /**
-     * Ensures we have a valid IGDB access token.
-     */
-    private boolean ensureIgdbToken() {
-        if (igdbAccessToken != null && System.currentTimeMillis() < tokenExpiry) {
-            return true;
-        }
-
-        try {
-            String tokenUrl = TWITCH_TOKEN_URL +
-                "?client_id=" + igdbClientId +
-                "&client_secret=" + igdbClientSecret +
-                "&grant_type=client_credentials";
-
-            String response = httpPost(tokenUrl, "", null, null);
-            if (response != null && response.contains("access_token")) {
-                // Extract token
-                Pattern tokenPattern = Pattern.compile("\"access_token\"\\s*:\\s*\"([^\"]+)\"");
-                Matcher tokenMatcher = tokenPattern.matcher(response);
-                if (tokenMatcher.find()) {
-                    igdbAccessToken = tokenMatcher.group(1);
-                }
-
-                // Extract expiry
-                Pattern expiryPattern = Pattern.compile("\"expires_in\"\\s*:\\s*(\\d+)");
-                Matcher expiryMatcher = expiryPattern.matcher(response);
-                if (expiryMatcher.find()) {
-                    long expiresIn = Long.parseLong(expiryMatcher.group(1));
-                    tokenExpiry = System.currentTimeMillis() + (expiresIn * 1000) - 60000; // 1 min buffer
-                }
-
-                return igdbAccessToken != null;
-            }
-        } catch (Exception e) {
-            System.err.println("[CombinedMetadataService] Token refresh failed: " + e.getMessage());
-        }
-        return false;
-    }
-
-    /**
-     * Parses IGDB game response.
-     */
-    private boolean parseIgdbGame(Game game, String json) {
-        try {
-            Pattern summaryPattern = Pattern.compile("\"summary\"\\s*:\\s*\"([^\"]*(?:\\\\.[^\"]*)*)\"");
-            Pattern coverPattern = Pattern.compile("\"cover\"\\s*:\\s*(\\d+)");
-
-            Matcher summaryMatcher = summaryPattern.matcher(json);
-            Matcher coverMatcher = coverPattern.matcher(json);
-
-            // Apply summary
-            if (summaryMatcher.find() && (game.getDescription() == null || game.getDescription().isEmpty())) {
+            // Parse summary
+            Pattern summaryPattern = Pattern.compile("\"summary\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+            Matcher summaryMatcher = summaryPattern.matcher(response);
+            if (summaryMatcher.find()) {
                 String summary = summaryMatcher.group(1)
                     .replace("\\n", "\n")
                     .replace("\\\"", "\"")
@@ -253,178 +277,310 @@ public class CombinedMetadataService implements MetadataService {
                 game.setDescription(summary);
             }
 
-            // Get cover image
+            // Parse cover URL (nested object)
+            Pattern coverUrlPattern = Pattern.compile("\"cover\"\\s*:\\s*\\{[^}]*\"url\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher coverMatcher = coverUrlPattern.matcher(response);
             if (coverMatcher.find()) {
-                String coverId = coverMatcher.group(1);
-                String coverUrl = fetchIgdbCover(coverId);
-                if (coverUrl != null) {
-                    if (game.getCoverImageUrl() == null || game.getCoverImageUrl().isEmpty()) {
-                        game.setCoverImageUrl(coverUrl);
-                    }
-                    if (game.getHeroImageUrl() == null || game.getHeroImageUrl().isEmpty()) {
-                        // Use larger version for hero
-                        game.setHeroImageUrl(coverUrl.replace("t_cover_big", "t_1080p"));
-                    }
+                String coverUrl = coverMatcher.group(1)
+                    .replace("t_thumb", "t_cover_big")
+                    .replace("//", "https://");
+                game.setCoverImageUrl(coverUrl);
+                game.setHeroImageUrl(coverUrl.replace("t_cover_big", "t_1080p"));
+                System.out.println("[IGDB] Set cover for " + game.getTitle() + ": " + coverUrl);
+            }
+
+            // Parse developer from involved_companies
+            Pattern devPattern = Pattern.compile("\"involved_companies\"\\s*:\\s*\\[\\s*\\{[^}]*\"developer\"\\s*:\\s*true[^}]*\"company\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher devMatcher = devPattern.matcher(response);
+            if (devMatcher.find()) {
+                game.setDeveloper(devMatcher.group(1));
+            } else {
+                // Try simpler pattern
+                Pattern simpleDevPattern = Pattern.compile("\"company\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"");
+                Matcher simpleDevMatcher = simpleDevPattern.matcher(response);
+                if (simpleDevMatcher.find()) {
+                    game.setDeveloper(simpleDevMatcher.group(1));
                 }
             }
 
-            // Extract developer from involved_companies
-            Pattern devPattern = Pattern.compile("\"company\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"");
-            Matcher devMatcher = devPattern.matcher(json);
-            if (devMatcher.find() && (game.getDeveloper() == null || game.getDeveloper().isEmpty())) {
-                game.setDeveloper(devMatcher.group(1));
-            }
-
-            return game.getDescription() != null || game.getCoverImageUrl() != null;
+            return game.getCoverImageUrl() != null || game.getDescription() != null;
 
         } catch (Exception e) {
-            System.err.println("[CombinedMetadataService] IGDB parse error: " + e.getMessage());
+            System.err.println("[IGDB] Fetch error for ID " + igdbId + ": " + e.getMessage());
         }
         return false;
     }
 
     /**
-     * Fetches cover URL from IGDB.
+     * Applies Steam metadata for Steam games.
      */
-    private String fetchIgdbCover(String coverId) {
+    private boolean applySteamMetadata(Game game) {
+        String appId = game.getAppId();
+        if (appId == null || appId.isEmpty()) return false;
+
         try {
-            String query = "fields url; where id = " + coverId + ";";
-            String response = httpPost(IGDB_COVERS, query, igdbClientId, igdbAccessToken);
+            // Set Steam CDN URLs directly (always work for valid appIds)
+            game.setCoverImageUrl(String.format(STEAM_COVER, appId));
+            game.setHeroImageUrl(String.format(STEAM_HERO, appId));
 
-            Pattern urlPattern = Pattern.compile("\"url\"\\s*:\\s*\"([^\"]+)\"");
-            Matcher matcher = urlPattern.matcher(response);
-            if (matcher.find()) {
-                String url = matcher.group(1);
-                // Convert to HTTPS and larger size
-                url = url.replace("//", "https://").replace("t_thumb", "t_cover_big");
-                return url;
+            // Fetch additional details from Steam API
+            String response = httpGet(STEAM_APP_DETAILS + appId);
+            if (response != null && response.contains("\"success\":true")) {
+                // Parse description
+                Pattern descPattern = Pattern.compile("\"short_description\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+                Matcher descMatcher = descPattern.matcher(response);
+                if (descMatcher.find()) {
+                    game.setDescription(descMatcher.group(1)
+                        .replace("\\n", "\n")
+                        .replace("\\\"", "\""));
+                }
+
+                // Parse developer
+                Pattern devPattern = Pattern.compile("\"developers\"\\s*:\\s*\\[\\s*\"([^\"]+)\"");
+                Matcher devMatcher = devPattern.matcher(response);
+                if (devMatcher.find()) {
+                    game.setDeveloper(devMatcher.group(1));
+                }
             }
-        } catch (Exception ignored) {}
-        return null;
+
+            return true;
+        } catch (Exception e) {
+            System.err.println("[Steam] Error fetching metadata: " + e.getMessage());
+        }
+        return false;
     }
 
     /**
-     * Parses Steam API details response.
+     * Validates if an application is a game using IGDB.
      */
-    private void parseSteamDetails(Game game, String json) {
-        // Description
-        if (game.getDescription() == null || game.getDescription().isEmpty()) {
-            String desc = extractJsonString(json, "short_description");
-            if (desc != null) {
-                desc = desc.replace("&quot;", "\"").replace("&amp;", "&")
-                           .replace("&lt;", "<").replace("&gt;", ">").replace("&#39;", "'");
-                game.setDescription(desc);
+    public GameValidationResult validateAsGame(String appName) {
+        if (appName == null || appName.isEmpty()) {
+            return GameValidationResult.notAGame();
+        }
+
+        String titleLower = appName.toLowerCase().trim();
+
+        // Check known games first
+        Integer knownId = KNOWN_IGDB_IDS.get(titleLower);
+        if (knownId == null) {
+            for (Map.Entry<String, Integer> entry : KNOWN_IGDB_IDS.entrySet()) {
+                if (titleLower.contains(entry.getKey()) || entry.getKey().contains(titleLower)) {
+                    knownId = entry.getValue();
+                    break;
+                }
             }
         }
 
-        // Developer
-        if (game.getDeveloper() == null || game.getDeveloper().isEmpty()) {
-            String dev = extractJsonArrayFirst(json, "developers");
-            if (dev != null) game.setDeveloper(dev);
+        if (knownId != null) {
+            // Fetch metadata using the known ID
+            return fetchValidationResultById(knownId, appName);
         }
 
-        // Release date
-        if (game.getReleaseDate() == null || game.getReleaseDate().isEmpty()) {
-            Pattern releaseDatePattern = Pattern.compile("\"release_date\"\\s*:\\s*\\{[^}]*\"date\"\\s*:\\s*\"([^\"]+)\"");
-            Matcher matcher = releaseDatePattern.matcher(json);
-            if (matcher.find()) {
-                game.setReleaseDate(matcher.group(1));
+        // Search IGDB for the game ID
+        if (!hasIgdbCredentials() || !ensureIgdbToken()) {
+            return GameValidationResult.notAGame();
+        }
+
+        Integer foundId = searchIgdbForGameId(appName);
+        if (foundId != null) {
+            return fetchValidationResultById(foundId, appName);
+        }
+
+        return GameValidationResult.notAGame();
+    }
+
+    private GameValidationResult fetchValidationResultById(int igdbId, String originalName) {
+        try {
+            if (!ensureIgdbToken()) return GameValidationResult.notAGame();
+
+            String query = String.format(
+                "fields name,summary,cover.url,involved_companies.company.name; where id = %d;",
+                igdbId
+            );
+
+            String response = igdbPost(IGDB_GAMES, query);
+            if (response == null || response.equals("[]")) {
+                return GameValidationResult.notAGame();
             }
-        }
-    }
 
-    /**
-     * Finds best matching Steam appId from search results.
-     */
-    private String findBestSteamMatch(String json, String title) {
-        Pattern itemPattern = Pattern.compile("\"id\":(\\d+),\"type\":\"app\",\"name\":\"([^\"]+)\"");
-        Matcher matcher = itemPattern.matcher(json);
+            String name = null, summary = null, coverUrl = null, developer = null;
 
-        String titleLower = title.toLowerCase();
-        String bestId = null;
-        int bestScore = 0;
+            // Parse name
+            Pattern namePattern = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher nameMatcher = namePattern.matcher(response);
+            if (nameMatcher.find()) name = nameMatcher.group(1);
 
-        while (matcher.find()) {
-            String id = matcher.group(1);
-            String name = matcher.group(2).toLowerCase();
-
-            int score = 0;
-            if (name.equals(titleLower)) score = 100;
-            else if (name.contains(titleLower)) score = 50 + titleLower.length();
-            else if (titleLower.contains(name)) score = 40 + name.length();
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestId = id;
+            // Parse summary
+            Pattern summaryPattern = Pattern.compile("\"summary\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+            Matcher summaryMatcher = summaryPattern.matcher(response);
+            if (summaryMatcher.find()) {
+                summary = summaryMatcher.group(1).replace("\\n", "\n").replace("\\\"", "\"");
             }
+
+            // Parse cover
+            Pattern coverPattern = Pattern.compile("\"cover\"\\s*:\\s*\\{[^}]*\"url\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher coverMatcher = coverPattern.matcher(response);
+            if (coverMatcher.find()) {
+                coverUrl = coverMatcher.group(1).replace("t_thumb", "t_cover_big").replace("//", "https://");
+            }
+
+            // Parse developer
+            Pattern devPattern = Pattern.compile("\"company\"\\s*:\\s*\\{[^}]*\"name\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher devMatcher = devPattern.matcher(response);
+            if (devMatcher.find()) developer = devMatcher.group(1);
+
+            return new GameValidationResult(true, String.valueOf(igdbId), name, coverUrl, summary, developer, 1.0);
+
+        } catch (Exception e) {
+            System.err.println("[IGDB] Validation fetch error: " + e.getMessage());
+        }
+        return GameValidationResult.notAGame();
+    }
+
+    private boolean ensureIgdbToken() {
+        if (igdbAccessToken != null && System.currentTimeMillis() < tokenExpiry) {
+            return true;
         }
 
-        return bestId;
+        if (igdbClientId == null || igdbClientSecret == null) return false;
+
+        try {
+            String tokenUrl = TWITCH_TOKEN_URL +
+                "?client_id=" + igdbClientId +
+                "&client_secret=" + igdbClientSecret +
+                "&grant_type=client_credentials";
+
+            String response = httpPost(tokenUrl, "");
+            if (response != null && response.contains("access_token")) {
+                Pattern tokenPattern = Pattern.compile("\"access_token\"\\s*:\\s*\"([^\"]+)\"");
+                Matcher tokenMatcher = tokenPattern.matcher(response);
+                if (tokenMatcher.find()) {
+                    igdbAccessToken = tokenMatcher.group(1);
+                }
+
+                Pattern expiryPattern = Pattern.compile("\"expires_in\"\\s*:\\s*(\\d+)");
+                Matcher expiryMatcher = expiryPattern.matcher(response);
+                if (expiryMatcher.find()) {
+                    long expiresIn = Long.parseLong(expiryMatcher.group(1));
+                    tokenExpiry = System.currentTimeMillis() + (expiresIn * 1000) - 60000;
+                }
+
+                return igdbAccessToken != null;
+            }
+        } catch (Exception e) {
+            System.err.println("[IGDB] Token refresh failed: " + e.getMessage());
+        }
+        return false;
     }
 
-    private String extractJsonString(String json, String key) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*(?:\\\\.[^\"]*)*)\"");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1).replace("\\\"", "\"") : null;
-    }
-
-    private String extractJsonArrayFirst(String json, String key) {
-        Pattern pattern = Pattern.compile("\"" + key + "\"\\s*:\\s*\\[\\s*\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(json);
-        return matcher.find() ? matcher.group(1) : null;
-    }
-
-    private String httpGet(String urlString, String clientId, String token) {
-        return httpRequest(urlString, "GET", null, clientId, token);
-    }
-
-    private String httpPost(String urlString, String body, String clientId, String token) {
-        return httpRequest(urlString, "POST", body, clientId, token);
-    }
-
-    private String httpRequest(String urlString, String method, String body, String clientId, String token) {
+    private String igdbPost(String url, String body) {
         HttpURLConnection conn = null;
         try {
-            URL url = new URL(urlString);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod(method);
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-            conn.setRequestProperty("User-Agent", "NexusLauncher/1.0");
-            conn.setRequestProperty("Accept", "application/json");
+            conn = (HttpURLConnection) new java.net.URI(url).toURL().openConnection();
+            conn.setRequestMethod("POST");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Client-ID", igdbClientId);
+            conn.setRequestProperty("Authorization", "Bearer " + igdbAccessToken);
+            conn.setRequestProperty("Content-Type", "text/plain");
+            conn.setDoOutput(true);
 
-            if (clientId != null) {
-                conn.setRequestProperty("Client-ID", clientId);
-            }
-            if (token != null) {
-                conn.setRequestProperty("Authorization", "Bearer " + token);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
             }
 
-            if ("POST".equals(method) && body != null) {
-                conn.setDoOutput(true);
-                conn.setRequestProperty("Content-Type", "application/json");
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(body.getBytes(StandardCharsets.UTF_8));
-                }
-            }
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 200) {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                    StringBuilder response = new StringBuilder();
+            int code = conn.getResponseCode();
+            if (code == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
                     String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    return response.toString();
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    return sb.toString();
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            System.err.println("[IGDB] Request error: " + e.getMessage());
         } finally {
             if (conn != null) conn.disconnect();
         }
         return null;
+    }
+
+    private String httpGet(String urlString) {
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new java.net.URI(urlString).toURL().openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestProperty("User-Agent", "NexusLauncher/1.0");
+
+            if (conn.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    return sb.toString();
+                }
+            }
+        } catch (Exception e) {
+            // Silent fail
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+        return null;
+    }
+
+    private String httpPost(String urlString, String body) {
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new java.net.URI(urlString).toURL().openConnection();
+            conn.setRequestMethod("POST");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setDoOutput(true);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
+
+            if (conn.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    return sb.toString();
+                }
+            }
+        } catch (Exception e) {
+            // Silent fail
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+        return null;
+    }
+
+    private double calculateSimilarity(String s1, String s2) {
+        if (s1.equals(s2)) return 1.0;
+        if (s1.isEmpty() || s2.isEmpty()) return 0.0;
+
+        int maxLen = Math.max(s1.length(), s2.length());
+        int distance = levenshteinDistance(s1, s2);
+        return 1.0 - ((double) distance / maxLen);
+    }
+
+    private int levenshteinDistance(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
+        for (int i = 0; i <= s1.length(); i++) dp[i][0] = i;
+        for (int j = 0; j <= s2.length(); j++) dp[0][j] = j;
+
+        for (int i = 1; i <= s1.length(); i++) {
+            for (int j = 1; j <= s2.length(); j++) {
+                int cost = s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1;
+                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), dp[i - 1][j - 1] + cost);
+            }
+        }
+        return dp[s1.length()][s2.length()];
     }
 
     private String getCacheKey(Game game) {
@@ -437,21 +593,15 @@ public class CombinedMetadataService implements MetadataService {
     private void cacheResult(Game game) {
         cache.put(getCacheKey(game), new CachedMetadata(
             game.getCoverImageUrl(), game.getHeroImageUrl(),
-            game.getDescription(), game.getDeveloper(), game.getReleaseDate()
+            game.getDescription(), game.getDeveloper()
         ));
     }
 
     private void applyFromCache(Game game, CachedMetadata cached) {
-        if (game.getCoverImageUrl() == null || game.getCoverImageUrl().isEmpty())
-            game.setCoverImageUrl(cached.coverUrl);
-        if (game.getHeroImageUrl() == null || game.getHeroImageUrl().isEmpty())
-            game.setHeroImageUrl(cached.heroUrl);
-        if (game.getDescription() == null || game.getDescription().isEmpty())
-            game.setDescription(cached.description);
-        if (game.getDeveloper() == null || game.getDeveloper().isEmpty())
-            game.setDeveloper(cached.developer);
-        if (game.getReleaseDate() == null || game.getReleaseDate().isEmpty())
-            game.setReleaseDate(cached.releaseDate);
+        if (game.getCoverImageUrl() == null) game.setCoverImageUrl(cached.coverUrl);
+        if (game.getHeroImageUrl() == null) game.setHeroImageUrl(cached.heroUrl);
+        if (game.getDescription() == null) game.setDescription(cached.description);
+        if (game.getDeveloper() == null) game.setDeveloper(cached.developer);
     }
 
     @Override
@@ -472,20 +622,49 @@ public class CombinedMetadataService implements MetadataService {
         return game.getHeroImageUrl();
     }
 
-    public static void clearCache() {
-        cache.clear();
+    // Inner classes
+    public static class GameValidationResult {
+        private final boolean isGame;
+        private final String igdbId;
+        private final String igdbName;
+        private final String coverUrl;
+        private final String summary;
+        private final String developer;
+        private final double relevanceScore;
+
+        public GameValidationResult(boolean isGame, String igdbId, String igdbName,
+                                    String coverUrl, String summary, String developer, double relevanceScore) {
+            this.isGame = isGame;
+            this.igdbId = igdbId;
+            this.igdbName = igdbName;
+            this.coverUrl = coverUrl;
+            this.summary = summary;
+            this.developer = developer;
+            this.relevanceScore = relevanceScore;
+        }
+
+        public boolean isGame() { return isGame; }
+        public String getIgdbId() { return igdbId; }
+        public String getIgdbName() { return igdbName; }
+        public String getCoverUrl() { return coverUrl; }
+        public String getSummary() { return summary; }
+        public String getDeveloper() { return developer; }
+        public double getRelevanceScore() { return relevanceScore; }
+
+        public static GameValidationResult notAGame() {
+            return new GameValidationResult(false, null, null, null, null, null, 0);
+        }
     }
 
     private static class CachedMetadata {
-        final String coverUrl, heroUrl, description, developer, releaseDate;
+        final String coverUrl, heroUrl, description, developer;
         final long timestamp;
 
-        CachedMetadata(String coverUrl, String heroUrl, String description, String developer, String releaseDate) {
+        CachedMetadata(String coverUrl, String heroUrl, String description, String developer) {
             this.coverUrl = coverUrl;
             this.heroUrl = heroUrl;
             this.description = description;
             this.developer = developer;
-            this.releaseDate = releaseDate;
             this.timestamp = System.currentTimeMillis();
         }
 

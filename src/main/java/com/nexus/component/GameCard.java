@@ -13,6 +13,11 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeBrands;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignF;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignG;
 
 /**
  * Custom component representing a game card in the library grid.
@@ -25,7 +30,6 @@ public class GameCard extends StackPane {
 
     private ImageView coverImage;
     private VBox overlay;
-    private Button playButton;
 
     private static final double CARD_WIDTH = 180;
     private static final double CARD_HEIGHT = 240;
@@ -49,7 +53,6 @@ public class GameCard extends StackPane {
 
         // Build card layers
         createCoverImage();
-        createGradientOverlay();
         createInfoSection();
         createHoverOverlay();
 
@@ -150,13 +153,6 @@ public class GameCard extends StackPane {
         }
     }
 
-    private void createGradientOverlay() {
-        // Dark gradient overlay for text readability
-        Region gradientOverlay = new Region();
-        gradientOverlay.getStyleClass().add("game-card-gradient");
-        gradientOverlay.setPrefSize(CARD_WIDTH, CARD_HEIGHT);
-        getChildren().add(gradientOverlay);
-    }
 
     private void createInfoSection() {
         VBox infoBox = new VBox(4);
@@ -178,23 +174,13 @@ public class GameCard extends StackPane {
         platformBadge.setAlignment(Pos.CENTER_LEFT);
         platformBadge.getStyleClass().addAll("badge", "badge-" + game.getPlatform().name().toLowerCase());
 
-        // Platform icon
-        ImageView platformIcon = new ImageView();
-        platformIcon.setFitWidth(12);
-        platformIcon.setFitHeight(12);
-        platformIcon.setPreserveRatio(true);
-
-        String platformIconPath = switch (game.getPlatform()) {
-            case STEAM -> "/assets/steam.png";
-            case EPIC -> "/assets/epic.png";
-            default -> "/assets/folder.png";
+        // Platform icon using FontIcon
+        FontIcon platformIcon = switch (game.getPlatform()) {
+            case STEAM -> FontIcon.of(FontAwesomeBrands.STEAM, 12);
+            case EPIC -> FontIcon.of(MaterialDesignG.GAMEPAD_SQUARE, 12);
+            default -> FontIcon.of(MaterialDesignF.FOLDER, 12);
         };
-
-        try {
-            platformIcon.setImage(new Image(getClass().getResourceAsStream(platformIconPath)));
-        } catch (Exception e) {
-            // Fallback if icon not found
-        }
+        platformIcon.getStyleClass().add("badge-icon");
 
         Label platformLabel = new Label(game.getPlatform().getDisplayName().toUpperCase());
         platformBadge.getChildren().addAll(platformIcon, platformLabel);
@@ -203,25 +189,18 @@ public class GameCard extends StackPane {
         HBox statusBadge = new HBox(4);
         statusBadge.setAlignment(Pos.CENTER_LEFT);
 
-        ImageView statusIcon = new ImageView();
-        statusIcon.setFitWidth(10);
-        statusIcon.setFitHeight(10);
-        statusIcon.setPreserveRatio(true);
-
+        FontIcon statusIcon;
         Label statusLabel = new Label();
         if (game.getStatus() == Game.Status.READY) {
-            try {
-                statusIcon.setImage(new Image(getClass().getResourceAsStream("/assets/check.png")));
-            } catch (Exception e) {}
+            statusIcon = FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10);
             statusLabel.setText("Ready");
             statusBadge.getStyleClass().addAll("status-label", "status-ready");
-        } else if (game.getStatus() == Game.Status.MISSING) {
-            try {
-                statusIcon.setImage(new Image(getClass().getResourceAsStream("/assets/folder.png")));
-            } catch (Exception e) {}
+        } else {
+            statusIcon = FontIcon.of(MaterialDesignF.FOLDER_ALERT, 10);
             statusLabel.setText("Missing");
             statusBadge.getStyleClass().addAll("status-label", "status-missing");
         }
+        statusIcon.getStyleClass().add("status-icon");
 
         statusBadge.getChildren().addAll(statusIcon, statusLabel);
 
@@ -233,69 +212,60 @@ public class GameCard extends StackPane {
     }
 
     private void createHoverOverlay() {
+        // Simple overlay - single StackPane with background and centered button
         overlay = new VBox();
         overlay.setAlignment(Pos.CENTER);
-        overlay.getStyleClass().add("game-card-overlay");
-        overlay.setOpacity(0);
-        overlay.setPickOnBounds(false);
+        overlay.setMinSize(CARD_WIDTH, CARD_HEIGHT);
+        overlay.setPrefSize(CARD_WIDTH, CARD_HEIGHT);
+        overlay.setMaxSize(CARD_WIDTH, CARD_HEIGHT);
+        overlay.setStyle("-fx-background-color: rgba(17, 24, 39, 0.85);");
 
-        // Create button with icon
-        HBox buttonContent = new HBox(6);
+        // Start completely invisible and non-interactive
+        overlay.setVisible(false);
+        overlay.setOpacity(0);
+
+        // Create the play button
+        Button playBtn = createPlayButton();
+        overlay.getChildren().add(playBtn);
+
+        getChildren().add(overlay);
+    }
+
+    private Button createPlayButton() {
+        HBox buttonContent = new HBox(8);
         buttonContent.setAlignment(Pos.CENTER);
 
-        ImageView buttonIcon = new ImageView();
-        buttonIcon.setFitWidth(16);
-        buttonIcon.setFitHeight(16);
-        buttonIcon.setPreserveRatio(true);
-
+        FontIcon buttonIcon;
         Label buttonLabel = new Label();
+        buttonLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
 
+        Button btn;
         if (game.getStatus() == Game.Status.MISSING) {
-            try {
-                buttonIcon.setImage(new Image(getClass().getResourceAsStream("/assets/folder.png")));
-            } catch (Exception e) {}
+            buttonIcon = FontIcon.of(MaterialDesignF.FOLDER_SEARCH, 18);
             buttonLabel.setText("LOCATE");
-            playButton = new Button();
-            playButton.getStyleClass().addAll("play-button", "locate-button");
+            btn = new Button();
+            btn.getStyleClass().addAll("play-button", "locate-button");
         } else {
-            try {
-                buttonIcon.setImage(new Image(getClass().getResourceAsStream("/assets/play.png")));
-            } catch (Exception e) {}
+            buttonIcon = FontIcon.of(FontAwesomeSolid.PLAY, 18);
             buttonLabel.setText("PLAY");
-            playButton = new Button();
-            playButton.getStyleClass().add("play-button");
+            btn = new Button();
+            btn.getStyleClass().add("play-button");
         }
+        buttonIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+        buttonIcon.getStyleClass().add("play-button-icon");
 
         buttonContent.getChildren().addAll(buttonIcon, buttonLabel);
-        playButton.setGraphic(buttonContent);
+        btn.setGraphic(buttonContent);
 
-        playButton.setOnAction(e -> {
+        btn.setOnAction(e -> {
             e.consume();
             if (onPlayClick != null) {
                 onPlayClick.run();
             }
         });
 
-        overlay.getChildren().add(playButton);
-        getChildren().add(overlay);
-    }
 
-    private void setupInteractions() {
-        // Hover effects
-        setOnMouseEntered(e -> {
-            animateHoverIn();
-        });
-
-        setOnMouseExited(e -> {
-            animateHoverOut();
-        });
-
-        // Click handler
-        setOnMouseClicked(e -> {
-            if (e.getTarget() != playButton && onCardClick != null) {
-                onCardClick.run();
-            }
-        });
+        return btn;
     }
 
     private void animateHoverIn() {
@@ -305,7 +275,8 @@ public class GameCard extends StackPane {
         scale.setToY(1.02);
         scale.play();
 
-        // Show overlay
+        // Show overlay - make visible first, then fade in
+        overlay.setVisible(true);
         FadeTransition fade = new FadeTransition(Duration.millis(200), overlay);
         fade.setToValue(1.0);
         fade.play();
@@ -326,9 +297,10 @@ public class GameCard extends StackPane {
         scale.setToY(1.0);
         scale.play();
 
-        // Hide overlay
+        // Hide overlay - fade out then set invisible
         FadeTransition fade = new FadeTransition(Duration.millis(200), overlay);
         fade.setToValue(0.0);
+        fade.setOnFinished(e -> overlay.setVisible(false));
         fade.play();
 
         // Scale cover image back
@@ -350,6 +322,19 @@ public class GameCard extends StackPane {
 
     public Game getGame() {
         return game;
+    }
+
+    private void setupInteractions() {
+        // Hover effects
+        setOnMouseEntered(e -> animateHoverIn());
+        setOnMouseExited(e -> animateHoverOut());
+
+        // Card click handler
+        setOnMouseClicked(e -> {
+            if (onCardClick != null && e.getClickCount() == 1) {
+                onCardClick.run();
+            }
+        });
     }
 }
 

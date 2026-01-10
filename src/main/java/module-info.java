@@ -6,6 +6,11 @@ module com.nexus.launcher {
     requires jakarta.persistence;
     requires java.sql;
     requires java.naming;
+    requires atlantafx.base;
+    requires org.kordamp.ikonli.javafx;
+    requires org.kordamp.ikonli.fontawesome5;
+    requires org.kordamp.ikonli.materialdesign2;
+    requires org.kordamp.ikonli.core;
 
     // Model package - open to Hibernate for entity mapping
     opens com.nexus.model to org.hibernate.orm.core, javafx.fxml;

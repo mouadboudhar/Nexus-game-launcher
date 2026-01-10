@@ -129,6 +129,91 @@
     -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.05), 1, 0, 0, 0);
 }
 
+/* FontIcon Styles */
+.nav-icon {
+    -fx-icon-color: #9ca3af;
+}
+
+.nav-button:hover .nav-icon {
+    -fx-icon-color: #f3f4f6;
+}
+
+.nav-button-active .nav-icon {
+    -fx-icon-color: white;
+}
+
+.view-header-icon {
+    -fx-icon-color: #9ca3af;
+}
+
+.search-icon {
+    -fx-icon-color: #6b7280;
+}
+
+.button-icon {
+    -fx-icon-color: white;
+}
+
+.badge-icon {
+    -fx-icon-color: inherit;
+}
+
+.status-icon {
+    -fx-icon-color: inherit;
+}
+
+.play-button-icon {
+    -fx-icon-color: white;
+}
+
+.placeholder-icon {
+    -fx-icon-color: #6b7280;
+}
+
+.dialog-icon {
+    -fx-icon-color: #4f46e5;
+}
+
+.settings-header-icon {
+    -fx-icon-color: #9ca3af;
+}
+
+.scan-main-icon {
+    -fx-icon-color: #4f46e5;
+}
+
+.store-icon {
+    -fx-icon-color: #9ca3af;
+}
+
+.steam-icon {
+    -fx-icon-color: #1b2838;
+}
+
+.epic-icon {
+    -fx-icon-color: #0078f2;
+}
+
+.empty-state-icon {
+    -fx-icon-color: #4b5563;
+}
+
+.favorite-icon {
+    -fx-icon-color: #ef4444;
+}
+
+.back-icon {
+    -fx-icon-color: #9ca3af;
+}
+
+.play-icon {
+    -fx-icon-color: white;
+}
+
+.edit-icon {
+    -fx-icon-color: white;
+}
+
 
 /* ============================================
    CONTENT VIEW STYLES
@@ -347,7 +432,7 @@
     -fx-background-radius: 12;
     -fx-border-color: #374151;
     -fx-border-radius: 12;
-    -fx-border-width: 1;
+    -fx-border-width: 12;
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0, 0, 4);
 }
@@ -368,7 +453,7 @@
 }
 
 .game-card-gradient {
-    /*-fx-background-color: linear-gradient(to top, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.4), transparent);*/
+    -fx-background-color: linear-gradient(to top, #111827e6 0%, #11182766 50%, transparent 100%);
 }
 
 .game-card-title {
@@ -379,7 +464,8 @@
 }
 
 .game-card-overlay {
-    -fx-background-color: rgba(17, 24, 39, 0.7);
+    /* Overlay styling handled in Java code for reliability */
+    -fx-alignment: center;
 }
 
 /* Play Button on Card */

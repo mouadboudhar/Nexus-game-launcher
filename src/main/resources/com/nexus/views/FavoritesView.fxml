@@ -1,55 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-</VBox>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox fx:id="rootContainer"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.nexus.controller.FavoritesController"
+      styleClass="content-view">
+
+    <!-- Top Header/Toolbar -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="16">
+        <padding><Insets top="0" right="32" bottom="0" left="32"/></padding>
+
+        <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
+            <FontIcon iconLiteral="fas-heart" iconSize="20" styleClass="view-header-icon"/>
+            <Label text="Favorites" styleClass="view-title"/>
+            <Label fx:id="gameCountLabel" text="0 GAMES" styleClass="game-count-badge"/>
+        </HBox>
+    </HBox>
+
+    <!-- Content Area -->
+    <StackPane VBox.vgrow="ALWAYS">
+
+        <!-- Empty State -->
+        <VBox fx:id="emptyState" styleClass="empty-state" alignment="CENTER" spacing="16">
+            <FontIcon iconLiteral="fas-heart" iconSize="48" styleClass="empty-state-icon"/>
+            <Label text="No Favorites Yet" styleClass="empty-title"/>
+            <Label text="Right click a game to add it to favorites." styleClass="empty-description"/>
+        </VBox>
+
+        <!-- Favorites Grid -->
+        <ScrollPane styleClass="games-scroll-pane" fitToWidth="true">
+            <VBox alignment="TOP_CENTER" styleClass="games-grid-container">
+                <FlowPane fx:id="favoritesGrid"
+                          styleClass="games-grid"
+                          hgap="24"
+                          vgap="24"
+                          alignment="CENTER">
+                    <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+                </FlowPane>
+            </VBox>
+        </ScrollPane>
 
     </StackPane>
 
-        </ScrollPane>
-            </VBox>
-                </FlowPane>
-                    <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
-                          alignment="CENTER">
-                          vgap="24"
-                          hgap="24"
-                          styleClass="games-grid"
-                <FlowPane fx:id="favoritesGrid"
-            <VBox alignment="TOP_CENTER" styleClass="games-grid-container">
-        <ScrollPane styleClass="games-scroll-pane" fitToWidth="true">
-        <!-- Favorites Grid -->
-
-        </VBox>
-            <Label text="Right click a game to add it to favorites." styleClass="empty-description"/>
-            <Label text="No Favorites Yet" styleClass="empty-title"/>
-            </ImageView>
-                <Image url="@../../../assets/favorite.png"/>
-            <ImageView fitWidth="48" fitHeight="48" preserveRatio="true" opacity="0.5">
-        <VBox fx:id="emptyState" styleClass="empty-state" alignment="CENTER" spacing="16">
-        <!-- Empty State -->
-
-    <StackPane VBox.vgrow="ALWAYS">
-    <!-- Content Area -->
-
-    </HBox>
-        </HBox>
-            <Label fx:id="gameCountLabel" text="0 GAMES" styleClass="game-count-badge"/>
-            <Label text="Favorites" styleClass="view-title"/>
-            </ImageView>
-                <Image url="@../../../assets/favorite.png"/>
-            <ImageView fitWidth="20" fitHeight="20" preserveRatio="true">
-        <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
-
-        <padding><Insets top="0" right="32" bottom="0" left="32"/></padding>
-    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="16">
-    <!-- Top Header/Toolbar -->
-
-      styleClass="content-view">
-      fx:controller="com.nexus.controller.FavoritesController"
-      xmlns:fx="http://javafx.com/fxml/1"
-      xmlns="http://javafx.com/javafx/21"
-<VBox fx:id="rootContainer"
-
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.geometry.*?>
-
+</VBox>
 

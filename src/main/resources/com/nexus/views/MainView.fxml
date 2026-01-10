@@ -2,8 +2,8 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <BorderPane fx:id="rootPane"
             xmlns="http://javafx.com/javafx/21"
@@ -34,9 +34,7 @@
                         onAction="#onNavLibrary"
                         maxWidth="Infinity">
                     <graphic>
-                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                            <Image url="@../../../assets/library.png"/>
-                        </ImageView>
+                        <FontIcon iconLiteral="mdi2g-gamepad-variant" iconSize="18" styleClass="nav-icon"/>
                     </graphic>
                 </Button>
 
@@ -46,9 +44,7 @@
                         onAction="#onNavScan"
                         maxWidth="Infinity">
                     <graphic>
-                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                            <Image url="@../../../assets/loop.png"/>
-                        </ImageView>
+                        <FontIcon iconLiteral="mdi2r-radar" iconSize="18" styleClass="nav-icon"/>
                     </graphic>
                 </Button>
 
@@ -58,9 +54,7 @@
                         onAction="#onNavFavorites"
                         maxWidth="Infinity">
                     <graphic>
-                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                            <Image url="@../../../assets/favorite.png"/>
-                        </ImageView>
+                        <FontIcon iconLiteral="fas-heart" iconSize="18" styleClass="nav-icon"/>
                     </graphic>
                 </Button>
 
@@ -70,9 +64,7 @@
                         onAction="#onNavSettings"
                         maxWidth="Infinity">
                     <graphic>
-                        <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
-                            <Image url="@../../../assets/settings.png"/>
-                        </ImageView>
+                        <FontIcon iconLiteral="fas-cog" iconSize="18" styleClass="nav-icon"/>
                     </graphic>
                 </Button>
             </VBox>

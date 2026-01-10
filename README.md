@@ -109,8 +109,9 @@ mvn javafx:run
 - Rounded window corners with custom title bar
 
 ### Game Detection
-- Automatic Steam library scanning
-- Automatic Epic Games library scanning
+- **Steam Library**: Automatically scans and detects all installed Steam games
+- **Epic Games Library**: Automatically scans and detects all installed Epic Games
+- **System Games (IGDB Validated)**: Scans Windows Uninstall Registry and validates each application against the IGDB database to automatically detect standalone games (Minecraft, League of Legends, GOG games, etc.)
 - Manual game addition support
 
 ## Game Metadata
@@ -122,13 +123,23 @@ The application automatically fetches game metadata (covers, descriptions, devel
 - Also searches Steam for non-Steam games that might have a Steam page
 - Provides cover images, hero images, descriptions, developers, and release dates
 
-### IGDB API (Optional - requires free Twitch API key)
-- For games not found on Steam
+### IGDB API (Recommended - requires free Twitch API key)
+- Used for games not found on Steam
+- **Also used to validate system applications as games** - This is how the app distinguishes actual games from regular software in the Windows Registry
 - To enable:
   1. Go to https://dev.twitch.tv/console/apps
   2. Create an application (free)
   3. Copy `nexus.properties.example` to `nexus.properties`
   4. Add your Client ID and Client Secret
+
+**Note:** Without IGDB credentials, system game detection is limited to known game paths (Riot Games, Minecraft). With IGDB credentials, the app can discover any game installed on your system.
+
+### How System Game Detection Works
+1. Scans Windows Uninstall Registry for all installed applications
+2. Filters out known non-game software (browsers, drivers, tools, etc.)
+3. For each remaining application, queries IGDB to check if it's a game
+4. If IGDB returns a match with >50% name similarity, the app is classified as a game
+5. Game metadata (cover, description, developer) is fetched from IGDB
 
 ### Fallback
 - Placeholder images via placehold.co API for games without covers
