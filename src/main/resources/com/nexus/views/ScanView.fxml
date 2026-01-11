@@ -16,7 +16,7 @@
 
         <!-- Icon -->
         <StackPane styleClass="scan-icon-container">
-            <FontIcon iconLiteral="mdi2r-radar" iconSize="100" styleClass="scan-main-icon"/>
+            <FontIcon iconLiteral="mdi2r-radar" styleClass="scan-main-icon"/>
         </StackPane>
 
         <!-- Title -->

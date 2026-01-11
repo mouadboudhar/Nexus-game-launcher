@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<!-- Root container: sizing is controlled entirely in Java -->
+<fx:root type="StackPane" xmlns:fx="http://javafx.com/fxml/1"
+         styleClass="game-card">
+
+    <!-- Cover image with darkening effect applied via CSS -->
+    <ImageView fx:id="coverImage" preserveRatio="false"/>
+
+    <!-- Info section with title and icons -->
+    <VBox alignment="BOTTOM_LEFT" spacing="6" StackPane.alignment="BOTTOM_LEFT" pickOnBounds="false">
+        <padding>
+            <Insets bottom="10" left="10" right="10"/>
+        </padding>
+
+        <Label fx:id="titleLabel" styleClass="game-card-title" wrapText="false"/>
+
+        <HBox alignment="CENTER_LEFT" spacing="0">
+            <HBox fx:id="platformBadge" alignment="CENTER_LEFT">
+                <FontIcon fx:id="platformIcon" iconSize="18" styleClass="platform-icon"/>
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <FontIcon fx:id="statusCheckmark" iconLiteral="fas-check-circle" iconSize="18"
+                      styleClass="status-checkmark" visible="false" managed="false"/>
+        </HBox>
+    </VBox>
+</fx:root>
+

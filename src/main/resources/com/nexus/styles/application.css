@@ -155,7 +155,8 @@
 }
 
 .badge-icon {
-    -fx-icon-color: inherit;
+    -fx-icon-color: rgba(255, 255, 255, 0.9);
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 3, 0, 0, 1);
 }
 
 .status-icon {
@@ -180,6 +181,7 @@
 
 .scan-main-icon {
     -fx-icon-color: #4f46e5;
+    -fx-icon-size: 50px
 }
 
 .store-icon {
@@ -432,9 +434,10 @@
     -fx-background-radius: 12;
     -fx-border-color: #374151;
     -fx-border-radius: 12;
-    -fx-border-width: 12;
+    -fx-border-width: 1;
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0, 0, 4);
+    -fx-padding: 0;
 }
 
 .game-card-hover {
@@ -452,13 +455,32 @@
     -fx-opacity: 1.0;
 }
 
-.game-card-gradient {
-    -fx-background-color: linear-gradient(to top, #111827e6 0%, #11182766 50%, transparent 100%);
+.game-card-hover-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.6);
+    /* Note: rounded corners handled via clip in Java for pixel-perfect alignment */
+}
+
+/* Bottom gradient for text readability */
+.game-card-bottom-gradient {
+    -fx-background-color: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
+    /* Note: rounded corners handled via parent clip in Java */
+}
+
+/* Platform icon styling */
+.platform-icon {
+    -fx-icon-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 4, 0, 0, 1);
+}
+
+/* Status checkmark styling */
+.status-checkmark {
+    -fx-icon-color: #22c55e;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 4, 0, 0, 1);
 }
 
 .game-card-title {
     -fx-text-fill: white;
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 4, 0, 0, 1);
 }
@@ -466,6 +488,36 @@
 .game-card-overlay {
     /* Overlay styling handled in Java code for reliability */
     -fx-alignment: center;
+}
+
+/* Badge Label styling */
+.badge-label {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.badge-steam .badge-label {
+    -fx-text-fill: #9ecaed;
+}
+
+.badge-epic .badge-label {
+    -fx-text-fill: #e5e7eb;
+}
+
+.badge-system .badge-label {
+    -fx-text-fill: #d8b4fe;
+}
+
+.badge-manual .badge-label {
+    -fx-text-fill: #a5b4fc;
+}
+
+/* Play Button Text styling */
+.play-button-text {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
 }
 
 /* Play Button on Card */
@@ -607,6 +659,11 @@
 
 .status-ready {
     -fx-text-fill: #4ade80;
+}
+
+.status-checkmark {
+    -fx-icon-color: #22c55e;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 4, 0, 0, 1);
 }
 
 .status-missing {

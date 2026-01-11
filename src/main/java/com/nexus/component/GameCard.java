@@ -1,16 +1,17 @@
 package com.nexus.component;
 
-import com.nexus.util.PlaceholderImageUtil;
 import com.nexus.model.Game;
-import javafx.animation.FadeTransition;
+import com.nexus.util.PlaceholderImageUtil;
 import javafx.animation.ScaleTransition;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeBrands;
@@ -19,299 +20,292 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignF;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignG;
 
+import java.io.IOException;
+
 /**
- * Custom component representing a game card in the library grid.
+ * Custom FXML-based component representing a game card in the library grid.
  */
 public class GameCard extends StackPane {
+
+    private static final double CARD_WIDTH = 180;
+    private static final double CARD_HEIGHT = 240;
+    private static final double CORNER_RADIUS = 12;
+
+    @FXML private ImageView coverImage;
+    @FXML private Label titleLabel;
+    @FXML private HBox platformBadge;
+    @FXML private FontIcon platformIcon;
+    @FXML private FontIcon statusCheckmark;
 
     private final Game game;
     private Runnable onCardClick;
     private Runnable onPlayClick;
 
-    private ImageView coverImage;
-    private VBox overlay;
-
-    private static final double CARD_WIDTH = 180;
-    private static final double CARD_HEIGHT = 240;
+    // Color adjustment for darkening the image
+    private final ColorAdjust darkenEffect;
 
     public GameCard(Game game) {
         this.game = game;
-        initialize();
-    }
 
-    private void initialize() {
+        // Set fixed size constraints to prevent expansion
         setPrefSize(CARD_WIDTH, CARD_HEIGHT);
         setMinSize(CARD_WIDTH, CARD_HEIGHT);
         setMaxSize(CARD_WIDTH, CARD_HEIGHT);
+
+        // Create darkening effect for the cover image
+        darkenEffect = new ColorAdjust();
+        darkenEffect.setBrightness(-0.2); // Darken by 30%
+
+        loadFXML();
+        initialize();
+    }
+
+    private void loadFXML() {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/nexus/views/GameCard.fxml"));
+        loader.setRoot(this);
+        loader.setController(this);
+
+        try {
+            loader.load();
+        } catch (IOException e) {
+            System.err.println("[GameCard] Failed to load FXML: " + e.getMessage());
+            createFallbackLayout();
+        }
+    }
+
+    private void initialize() {
         getStyleClass().add("game-card");
 
-        // Clip the card to rounded corners
-        Rectangle clip = new Rectangle(CARD_WIDTH, CARD_HEIGHT);
-        clip.setArcWidth(16);
-        clip.setArcHeight(16);
+        // Bind cover image to card size
+        coverImage.fitWidthProperty().bind(widthProperty());
+        coverImage.fitHeightProperty().bind(heightProperty());
+
+        // Apply darkening effect to make white text readable
+        coverImage.setEffect(darkenEffect);
+
+        // Apply clip for rounded corners
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(widthProperty());
+        clip.heightProperty().bind(heightProperty());
+        clip.setArcWidth(CORNER_RADIUS * 2);
+        clip.setArcHeight(CORNER_RADIUS * 2);
         setClip(clip);
 
-        // Build card layers
-        createCoverImage();
-        createInfoSection();
-        createHoverOverlay();
+        // Set up game data
+        setupGameData();
 
-        // Apply styling based on game status
+        // Set up interactions
+        setupInteractions();
+
+        // Apply missing style if needed
         if (game.getStatus() == Game.Status.MISSING) {
             getStyleClass().add("game-card-missing");
         }
-
-        setupInteractions();
     }
 
-    private void createCoverImage() {
-        coverImage = new ImageView();
-        coverImage.setFitWidth(CARD_WIDTH);
-        coverImage.setFitHeight(CARD_HEIGHT);
-        coverImage.setPreserveRatio(false);
-        coverImage.getStyleClass().add("game-card-image");
+    private void setupGameData() {
+        // Set title
+        if (titleLabel != null) {
+            titleLabel.setText(game.getTitle());
+        }
 
-        // Load image asynchronously
+        // Set platform icon
+        if (platformIcon != null) {
+            switch (game.getPlatform()) {
+                case STEAM -> platformIcon.setIconCode(FontAwesomeBrands.STEAM);
+                case EPIC -> platformIcon.setIconCode(MaterialDesignG.GAMEPAD_SQUARE);
+                default -> platformIcon.setIconCode(MaterialDesignF.FOLDER);
+            }
+            platformIcon.setIconSize(18);
+            platformIcon.setIconColor(Color.WHITE);
+        }
+
+        // Set status checkmark
+        if (statusCheckmark != null) {
+            boolean isReady = game.getStatus() == Game.Status.READY;
+            statusCheckmark.setVisible(isReady);
+            statusCheckmark.setManaged(isReady);
+            if (isReady) {
+                statusCheckmark.setIconCode(FontAwesomeSolid.CHECK_CIRCLE);
+                statusCheckmark.setIconSize(18);
+                statusCheckmark.setIconColor(Color.web("#22c55e"));
+            }
+        }
+
+        // Load cover image
+        loadCoverImage();
+    }
+
+    private void loadCoverImage() {
+        if (coverImage == null) return;
+
         String coverUrl = game.getCoverImageUrl();
         if (coverUrl != null && !coverUrl.isEmpty() && !coverUrl.startsWith("/assets/")) {
             try {
-                // Create image with background loading
                 Image image = new Image(coverUrl, CARD_WIDTH * 2, CARD_HEIGHT * 2, true, true, true);
 
-                // Handle loading errors
                 image.errorProperty().addListener((obs, wasError, isError) -> {
                     if (isError) {
-                        setPlaceholderImage();
+                        loadPlaceholderImage();
                     }
                 });
 
-                // Set image when loaded or immediately if cached
                 if (!image.isError()) {
                     coverImage.setImage(image);
                 } else {
-                    setPlaceholderImage();
+                    loadPlaceholderImage();
                 }
             } catch (Exception e) {
-                // Use placeholder if image fails to load
-                setPlaceholderImage();
+                loadPlaceholderImage();
             }
         } else {
-            setPlaceholderImage();
+            loadPlaceholderImage();
         }
-
-        getChildren().add(coverImage);
     }
 
-    private void setPlaceholderImage() {
-        // Use placehold.co API for placeholder images with game title
+    private void loadPlaceholderImage() {
         String gameTitle = game.getTitle() != null ? game.getTitle() : "Game";
         int width = (int) (CARD_WIDTH * 2);
         int height = (int) (CARD_HEIGHT * 2);
         String placeholderUrl = PlaceholderImageUtil.getCoverPlaceholder(gameTitle, width, height);
 
         try {
-            Image placeholderImage = new Image(placeholderUrl, CARD_WIDTH * 2, CARD_HEIGHT * 2, true, true, true);
-            placeholderImage.errorProperty().addListener((obs, wasError, isError) -> {
-                if (isError) {
-                    // Fallback to styled background with game title
-                    showLocalPlaceholder(gameTitle);
+            Image placeholderImage = new Image(placeholderUrl, width, height, true, true, true);
+
+            placeholderImage.progressProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal.doubleValue() >= 1.0 && !placeholderImage.isError()) {
+                    coverImage.setImage(placeholderImage);
                 }
             });
 
-            // Also check progress - when loaded, set it
-            placeholderImage.progressProperty().addListener((obs, oldProgress, newProgress) -> {
-                if (newProgress.doubleValue() >= 1.0 && !placeholderImage.isError()) {
-                    coverImage.setImage(placeholderImage);
+            placeholderImage.errorProperty().addListener((obs, wasError, isError) -> {
+                if (isError) {
+                    showLocalFallback(gameTitle);
                 }
             });
 
             if (placeholderImage.getProgress() >= 1.0 && !placeholderImage.isError()) {
                 coverImage.setImage(placeholderImage);
             } else if (placeholderImage.isError()) {
-                showLocalPlaceholder(gameTitle);
+                showLocalFallback(gameTitle);
             }
         } catch (Exception e) {
-            // Fallback to styled background
-            showLocalPlaceholder(gameTitle);
+            showLocalFallback(gameTitle);
         }
     }
 
-    private void showLocalPlaceholder(String gameTitle) {
-        // Set gradient background
+    private void showLocalFallback(String gameTitle) {
         setStyle("-fx-background-color: linear-gradient(to bottom, #4f46e5, #1f2937);");
 
-        // Add a label with the game title if not already present
-        boolean hasLabel = getChildren().stream().anyMatch(n -> n instanceof Label && "placeholder-title".equals(n.getId()));
+        boolean hasLabel = getChildren().stream()
+                .anyMatch(n -> n instanceof Label && "placeholder-title".equals(n.getId()));
+
         if (!hasLabel) {
-            Label titleLabel = new Label(gameTitle);
-            titleLabel.setId("placeholder-title");
-            titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-wrap-text: true; -fx-text-alignment: center; -fx-padding: 16;");
-            titleLabel.setMaxWidth(CARD_WIDTH - 20);
-            titleLabel.setWrapText(true);
-            StackPane.setAlignment(titleLabel, Pos.CENTER);
-            getChildren().add(1, titleLabel); // Add after coverImage but before other overlays
+            Label fallbackLabel = new Label(gameTitle);
+            fallbackLabel.setId("placeholder-title");
+            fallbackLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
+                    "-fx-wrap-text: true; -fx-text-alignment: center; -fx-padding: 16;");
+            fallbackLabel.setMaxWidth(CARD_WIDTH - 20);
+            fallbackLabel.setWrapText(true);
+            StackPane.setAlignment(fallbackLabel, javafx.geometry.Pos.CENTER);
+            getChildren().add(1, fallbackLabel);
         }
     }
 
-
-    private void createInfoSection() {
-        VBox infoBox = new VBox(4);
-        infoBox.setAlignment(Pos.BOTTOM_LEFT);
-        infoBox.setPadding(new Insets(16));
-        infoBox.setPickOnBounds(false);
-
-        // Game title
-        Label titleLabel = new Label(game.getTitle());
-        titleLabel.getStyleClass().add("game-card-title");
-        titleLabel.setMaxWidth(CARD_WIDTH - 32);
-
-        // Platform and status badges
-        HBox badges = new HBox(8);
-        badges.setAlignment(Pos.CENTER_LEFT);
-
-        // Platform badge with icon
-        HBox platformBadge = new HBox(4);
-        platformBadge.setAlignment(Pos.CENTER_LEFT);
-        platformBadge.getStyleClass().addAll("badge", "badge-" + game.getPlatform().name().toLowerCase());
-
-        // Platform icon using FontIcon
-        FontIcon platformIcon = switch (game.getPlatform()) {
-            case STEAM -> FontIcon.of(FontAwesomeBrands.STEAM, 12);
-            case EPIC -> FontIcon.of(MaterialDesignG.GAMEPAD_SQUARE, 12);
-            default -> FontIcon.of(MaterialDesignF.FOLDER, 12);
-        };
-        platformIcon.getStyleClass().add("badge-icon");
-
-        Label platformLabel = new Label(game.getPlatform().getDisplayName().toUpperCase());
-        platformBadge.getChildren().addAll(platformIcon, platformLabel);
-
-        // Status indicator with icon
-        HBox statusBadge = new HBox(4);
-        statusBadge.setAlignment(Pos.CENTER_LEFT);
-
-        FontIcon statusIcon;
-        Label statusLabel = new Label();
-        if (game.getStatus() == Game.Status.READY) {
-            statusIcon = FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10);
-            statusLabel.setText("Ready");
-            statusBadge.getStyleClass().addAll("status-label", "status-ready");
-        } else {
-            statusIcon = FontIcon.of(MaterialDesignF.FOLDER_ALERT, 10);
-            statusLabel.setText("Missing");
-            statusBadge.getStyleClass().addAll("status-label", "status-missing");
-        }
-        statusIcon.getStyleClass().add("status-icon");
-
-        statusBadge.getChildren().addAll(statusIcon, statusLabel);
-
-        badges.getChildren().addAll(platformBadge, statusBadge);
-        infoBox.getChildren().addAll(titleLabel, badges);
-
-        StackPane.setAlignment(infoBox, Pos.BOTTOM_LEFT);
-        getChildren().add(infoBox);
-    }
-
-    private void createHoverOverlay() {
-        // Simple overlay - single StackPane with background and centered button
-        overlay = new VBox();
-        overlay.setAlignment(Pos.CENTER);
-        overlay.setMinSize(CARD_WIDTH, CARD_HEIGHT);
-        overlay.setPrefSize(CARD_WIDTH, CARD_HEIGHT);
-        overlay.setMaxSize(CARD_WIDTH, CARD_HEIGHT);
-        overlay.setStyle("-fx-background-color: rgba(17, 24, 39, 0.85);");
-
-        // Start completely invisible and non-interactive
-        overlay.setVisible(false);
-        overlay.setOpacity(0);
-
-        // Create the play button
-        Button playBtn = createPlayButton();
-        overlay.getChildren().add(playBtn);
-
-        getChildren().add(overlay);
-    }
-
-    private Button createPlayButton() {
-        HBox buttonContent = new HBox(8);
-        buttonContent.setAlignment(Pos.CENTER);
-
-        FontIcon buttonIcon;
-        Label buttonLabel = new Label();
-        buttonLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
-
-        Button btn;
-        if (game.getStatus() == Game.Status.MISSING) {
-            buttonIcon = FontIcon.of(MaterialDesignF.FOLDER_SEARCH, 18);
-            buttonLabel.setText("LOCATE");
-            btn = new Button();
-            btn.getStyleClass().addAll("play-button", "locate-button");
-        } else {
-            buttonIcon = FontIcon.of(FontAwesomeSolid.PLAY, 18);
-            buttonLabel.setText("PLAY");
-            btn = new Button();
-            btn.getStyleClass().add("play-button");
-        }
-        buttonIcon.setIconColor(javafx.scene.paint.Color.WHITE);
-        buttonIcon.getStyleClass().add("play-button-icon");
-
-        buttonContent.getChildren().addAll(buttonIcon, buttonLabel);
-        btn.setGraphic(buttonContent);
-
-        btn.setOnAction(e -> {
-            e.consume();
-            if (onPlayClick != null) {
-                onPlayClick.run();
-            }
+    private void setupInteractions() {
+        // Hover effects - just scale, no overlay
+        setOnMouseEntered(e -> {
+            ScaleTransition scale = new ScaleTransition(Duration.millis(200), this);
+            scale.setToX(1.03);
+            scale.setToY(1.03);
+            scale.play();
+            getStyleClass().add("game-card-hover");
         });
 
+        setOnMouseExited(e -> {
+            ScaleTransition scale = new ScaleTransition(Duration.millis(200), this);
+            scale.setToX(1.0);
+            scale.setToY(1.0);
+            scale.play();
+            getStyleClass().remove("game-card-hover");
+        });
 
-        return btn;
+        // Card click handler
+        setOnMouseClicked(e -> {
+            if (onCardClick != null && e.getClickCount() == 1) {
+                onCardClick.run();
+            }
+        });
     }
 
-    private void animateHoverIn() {
-        // Scale up
-        ScaleTransition scale = new ScaleTransition(Duration.millis(200), this);
-        scale.setToX(1.02);
-        scale.setToY(1.02);
-        scale.play();
+    /**
+     * Creates a fallback layout if FXML loading fails.
+     */
+    private void createFallbackLayout() {
+        setPrefSize(CARD_WIDTH, CARD_HEIGHT);
+        setMinSize(CARD_WIDTH, CARD_HEIGHT);
+        setMaxSize(CARD_WIDTH, CARD_HEIGHT);
+        getStyleClass().add("game-card");
 
-        // Show overlay - make visible first, then fade in
-        overlay.setVisible(true);
-        FadeTransition fade = new FadeTransition(Duration.millis(200), overlay);
-        fade.setToValue(1.0);
-        fade.play();
+        // Create cover image with darkening effect
+        coverImage = new ImageView();
+        coverImage.setFitWidth(CARD_WIDTH);
+        coverImage.setFitHeight(CARD_HEIGHT);
+        coverImage.setPreserveRatio(false);
+        coverImage.setEffect(darkenEffect);
+        getChildren().add(coverImage);
 
-        // Scale cover image
-        ScaleTransition imgScale = new ScaleTransition(Duration.millis(300), coverImage);
-        imgScale.setToX(1.1);
-        imgScale.setToY(1.1);
-        imgScale.play();
+        // Create info section with title and icons
+        javafx.scene.layout.VBox infoSection = new javafx.scene.layout.VBox(6);
+        infoSection.setAlignment(javafx.geometry.Pos.BOTTOM_LEFT);
+        infoSection.setPadding(new javafx.geometry.Insets(0, 10, 10, 10));
+        infoSection.setPickOnBounds(false);
 
-        getStyleClass().add("game-card-hover");
+        // Title
+        titleLabel = new Label(game.getTitle());
+        titleLabel.getStyleClass().add("game-card-title");
+        titleLabel.setMaxWidth(CARD_WIDTH - 20);
+        titleLabel.setWrapText(true);
+
+        // Bottom row with platform icon and checkmark
+        HBox bottomRow = new HBox();
+        bottomRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        // Platform icon
+        platformIcon = new FontIcon();
+        platformIcon.setIconSize(18);
+        platformIcon.setIconColor(Color.WHITE);
+        platformIcon.getStyleClass().add("platform-icon");
+
+        switch (game.getPlatform()) {
+            case STEAM -> platformIcon.setIconCode(FontAwesomeBrands.STEAM);
+            case EPIC -> platformIcon.setIconCode(MaterialDesignG.GAMEPAD_SQUARE);
+            default -> platformIcon.setIconCode(MaterialDesignF.FOLDER);
+        }
+
+        platformBadge = new HBox();
+        platformBadge.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        platformBadge.getChildren().add(platformIcon);
+
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        bottomRow.getChildren().addAll(platformBadge, spacer);
+
+        // Status checkmark
+        if (game.getStatus() == Game.Status.READY) {
+            statusCheckmark = FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 18);
+            statusCheckmark.setIconColor(Color.web("#22c55e"));
+            statusCheckmark.getStyleClass().add("status-checkmark");
+            bottomRow.getChildren().add(statusCheckmark);
+        }
+
+        infoSection.getChildren().addAll(titleLabel, bottomRow);
+        StackPane.setAlignment(infoSection, javafx.geometry.Pos.BOTTOM_LEFT);
+        getChildren().add(infoSection);
     }
 
-    private void animateHoverOut() {
-        // Scale back
-        ScaleTransition scale = new ScaleTransition(Duration.millis(200), this);
-        scale.setToX(1.0);
-        scale.setToY(1.0);
-        scale.play();
-
-        // Hide overlay - fade out then set invisible
-        FadeTransition fade = new FadeTransition(Duration.millis(200), overlay);
-        fade.setToValue(0.0);
-        fade.setOnFinished(e -> overlay.setVisible(false));
-        fade.play();
-
-        // Scale cover image back
-        ScaleTransition imgScale = new ScaleTransition(Duration.millis(300), coverImage);
-        imgScale.setToX(1.0);
-        imgScale.setToY(1.0);
-        imgScale.play();
-
-        getStyleClass().remove("game-card-hover");
-    }
-
+    // Public API methods
     public void setOnCardClick(Runnable handler) {
         this.onCardClick = handler;
     }
@@ -322,19 +316,6 @@ public class GameCard extends StackPane {
 
     public Game getGame() {
         return game;
-    }
-
-    private void setupInteractions() {
-        // Hover effects
-        setOnMouseEntered(e -> animateHoverIn());
-        setOnMouseExited(e -> animateHoverOut());
-
-        // Card click handler
-        setOnMouseClicked(e -> {
-            if (onCardClick != null && e.getClickCount() == 1) {
-                onCardClick.run();
-            }
-        });
     }
 }
 

@@ -2,6 +2,7 @@ package com.nexus;
 
 import atlantafx.base.theme.PrimerDark;
 import com.nexus.util.HibernateUtil;
+import com.nexus.util.WindowsThemeUtil;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -47,6 +48,9 @@ public class NexusLauncherApp extends Application {
         }
 
         stage.show();
+
+        // Enable dark title bar on Windows
+        WindowsThemeUtil.enableDarkTitleBar(stage);
     }
 
     @Override
