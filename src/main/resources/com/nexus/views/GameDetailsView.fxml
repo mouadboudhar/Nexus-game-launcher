@@ -2,143 +2,215 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.effect.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<StackPane fx:id="rootPane"
-           xmlns="http://javafx.com/javafx/21"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.nexus.controller.GameDetailsController"
-           styleClass="game-details-view">
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.nexus.controller.GameDetailsController"
+            fitToWidth="true"
+            fitToHeight="false"
+            hbarPolicy="AS_NEEDED"
+            styleClass="game-details-scroll"
+            fx:id="rootScrollPane">
 
-    <!-- Hero Background Image (Blurred) -->
-    <ImageView fx:id="heroBackground"
-               preserveRatio="false"
-               styleClass="hero-background">
-        <effect>
-            <GaussianBlur radius="30"/>
-        </effect>
-    </ImageView>
+    <VBox fx:id="mainContainer" styleClass="game-details-view">
 
-    <!-- Dark Overlay -->
-    <Region styleClass="hero-overlay"/>
+        <!-- ==================== HERO HEADER SECTION ==================== -->
+        <StackPane fx:id="heroHeader" styleClass="hero-header" prefHeight="360" minHeight="360">
 
-    <!-- Main Content -->
-    <VBox styleClass="details-content" spacing="0">
+            <!-- Layer 1: Background Image (cover-fit with clipping, handled in Java) -->
+<!--            <ImageView fx:id="heroBackground"-->
+<!--                       preserveRatio="false"-->
+<!--                       styleClass="hero-background">-->
+<!--            </ImageView>-->
 
-        <!-- Top Bar with Back Button -->
-        <HBox styleClass="details-header" alignment="CENTER_LEFT" spacing="16">
-            <padding><Insets top="16" right="32" bottom="16" left="32"/></padding>
+            <!-- Layer 2: Darker Gradient Overlay for text readability -->
+            <Region styleClass="hero-gradient-overlay"/>
 
-            <Button fx:id="backButton"
-                    styleClass="back-button"
-                    onAction="#onBackClick">
-                <graphic>
-                    <HBox alignment="CENTER" spacing="8">
-                        <FontIcon iconLiteral="fas-arrow-left" iconSize="14" styleClass="back-icon"/>
-                        <Label text="Back to Library" styleClass="back-button-text"/>
-                    </HBox>
-                </graphic>
-            </Button>
+            <!-- Layer 3: Hero Content (Cover + Info) -->
+            <HBox styleClass="hero-content" alignment="BOTTOM_LEFT" spacing="32">
+                <padding><Insets top="0" right="48" bottom="-40" left="48"/></padding>
 
-            <Region HBox.hgrow="ALWAYS"/>
-
-            <Button fx:id="favoriteButton"
-                    styleClass="icon-button, favorite-button"
-                    onAction="#onFavoriteClick">
-                <graphic>
-                    <FontIcon fx:id="favoriteIcon" iconLiteral="fas-heart" iconSize="20" styleClass="favorite-icon"/>
-                </graphic>
-            </Button>
-        </HBox>
-
-        <!-- Game Info Section -->
-        <HBox styleClass="game-info-section" spacing="48" alignment="TOP_LEFT" VBox.vgrow="ALWAYS">
-            <padding><Insets top="32" right="64" bottom="64" left="64"/></padding>
-
-            <!-- Cover Art -->
-            <VBox alignment="TOP_CENTER" spacing="16">
-                <StackPane styleClass="cover-container">
+                <!-- Cover Art (elevated, overlapping bottom) -->
+                <StackPane styleClass="cover-container-elevated">
                     <ImageView fx:id="coverImage"
-                               fitWidth="240"
-                               fitHeight="320"
-                               preserveRatio="false"
-                               styleClass="cover-image">
-                    </ImageView>
-                    <Rectangle width="240" height="320" arcWidth="12" arcHeight="12"
-                               styleClass="cover-border" fill="TRANSPARENT"
-                               stroke="#374151" strokeWidth="1"/>
+                               fitWidth="180"
+                               fitHeight="240"
+                               preserveRatio="true"
+                               styleClass="cover-image"/>
+                    <Rectangle width="180" height="240" arcWidth="8" arcHeight="8"
+                               fill="TRANSPARENT" stroke="#374151" strokeWidth="1"/>
                 </StackPane>
 
-                <!-- Status Badge -->
-                <HBox fx:id="statusBadgeContainer" alignment="CENTER" spacing="6">
-                    <FontIcon fx:id="statusIcon" iconLiteral="fas-check-circle" iconSize="14" styleClass="status-icon"/>
-                    <Label fx:id="statusLabel" text="Ready to Play" styleClass="status-badge"/>
-                </HBox>
-            </VBox>
+                <!-- Game Info -->
+                <VBox spacing="12" alignment="BOTTOM_LEFT">
+                    <padding><Insets bottom="48"/></padding>
 
-            <!-- Game Details Text -->
-            <VBox spacing="24" HBox.hgrow="ALWAYS" maxWidth="700">
+                    <!-- Platform & Status Badges -->
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="platformBadgeLabel" text="STEAM" styleClass="platform-badge-pill"/>
+                        <HBox fx:id="statusBadgeContainer" alignment="CENTER" spacing="6" styleClass="status-badge-pill">
+                            <FontIcon fx:id="statusIcon" iconLiteral="fas-check-circle" iconSize="12"/>
+                            <Label fx:id="statusLabel" text="Ready"/>
+                        </HBox>
+                    </HBox>
 
-                <!-- Title -->
-                <Label fx:id="titleLabel" text="Game Title" styleClass="game-title"/>
+                    <!-- Game Title -->
+                    <Label fx:id="titleLabel"
+                           text="Game Title"
+                           styleClass="game-title-hero"
+                           wrapText="true"
+                           maxWidth="500"/>
 
-                <!-- Action Buttons -->
-                <HBox spacing="16">
-                    <Button fx:id="playButton"
-                            text="PLAY"
-                            styleClass="primary-button, play-large-button"
-                            onAction="#onPlayClick">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-play" iconSize="18" styleClass="play-icon"/>
-                        </graphic>
-                    </Button>
-                    <Button fx:id="editButton"
-                            text="Edit"
-                            styleClass="secondary-button, play-large-button"
-                            onAction="#onEditClick">
-                        <graphic>
-                            <FontIcon iconLiteral="fas-edit" iconSize="18" styleClass="edit-icon"/>
-                        </graphic>
-                    </Button>
-                </HBox>
+                    <!-- Action Bar -->
+                    <HBox spacing="12" alignment="CENTER_LEFT" styleClass="action-bar">
+                        <!-- Play Button (Pill shaped) -->
+                        <Button fx:id="playButton"
+                                styleClass="play-button-pill"
+                                onAction="#onPlayClick">
+                            <graphic>
+                                <HBox alignment="CENTER" spacing="10">
+                                    <FontIcon iconLiteral="fas-play" iconSize="14" styleClass="play-icon"/>
+                                    <Label text="PLAY" styleClass="play-button-text"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
 
-                <!-- Description -->
-                <VBox spacing="8">
-                    <Label text="Description" styleClass="section-label"/>
+                        <!-- Settings Icon Button (Cog) -->
+                        <Button fx:id="settingsButton"
+                                styleClass="icon-button-circle"
+                                onAction="#onSettingsClick">
+                            <graphic>
+                                <FontIcon iconLiteral="fas-cog" iconSize="18" styleClass="settings-icon"/>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <!-- Spacer -->
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Back & Favorite Buttons (Top Right) -->
+                <VBox alignment="TOP_RIGHT" spacing="12">
+                    <padding><Insets top="16"/></padding>
+                    <HBox spacing="12" alignment="CENTER_RIGHT">
+                        <Button fx:id="backButton"
+                                styleClass="back-button-pill"
+                                onAction="#onBackClick">
+                            <graphic>
+                                <HBox alignment="CENTER" spacing="8">
+                                    <FontIcon iconLiteral="fas-arrow-left" iconSize="12"/>
+                                    <Label text="Back" styleClass="back-button-text"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <Button fx:id="favoriteButton"
+                                styleClass="icon-button-circle"
+                                onAction="#onFavoriteClick">
+                            <graphic>
+                                <FontIcon fx:id="favoriteIcon" iconLiteral="fas-heart" iconSize="18" styleClass="favorite-icon"/>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </HBox>
+        </StackPane>
+
+        <!-- ==================== CONTENT BODY SECTION ==================== -->
+        <!-- Using GridPane with percentage-based column constraints for responsive layout -->
+        <GridPane styleClass="content-body" hgap="0" vgap="24" VBox.vgrow="ALWAYS">
+            <padding><Insets top="64" right="32" bottom="48" left="32"/></padding>
+
+            <columnConstraints>
+                <ColumnConstraints percentWidth="68" hgrow="ALWAYS"/>
+                <ColumnConstraints percentWidth="32" hgrow="SOMETIMES"/>
+            </columnConstraints>
+
+            <rowConstraints>
+                <RowConstraints vgrow="ALWAYS"/>
+            </rowConstraints>
+
+            <!-- Left Column: Add margin to the RIGHT to create the gap -->
+            <VBox spacing="32" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <GridPane.margin>
+                    <Insets right="24"/>
+                </GridPane.margin>
+
+                <VBox spacing="12" styleClass="content-card">
+                    <Label text="About this Game" styleClass="section-title"/>
                     <Label fx:id="descriptionLabel"
-                           text="Game description goes here..."
-                           styleClass="game-description"
+                           text="Game description..."
+                           styleClass="description-text"
                            wrapText="true"/>
                 </VBox>
 
-                <!-- Metadata Grid -->
-                <HBox spacing="48" styleClass="metadata-section">
-                    <VBox spacing="4">
-                        <Label text="Developer" styleClass="meta-label"/>
-                        <Label fx:id="developerLabel" text="Unknown" styleClass="meta-value"/>
-                    </VBox>
+                <!-- Stats Grid (Play Time / Last Played) -->
+                <HBox spacing="24" styleClass="stats-grid">
+                    <HBox spacing="16" alignment="CENTER_LEFT" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <StackPane styleClass="stat-icon-container">
+                            <FontIcon iconLiteral="fas-clock" iconSize="24" styleClass="stat-icon"/>
+                        </StackPane>
+                        <VBox spacing="2">
+                            <Label text="PLAY TIME" styleClass="stat-label"/>
+                            <Label fx:id="playTimeLabel" text="0 hours" styleClass="stat-value"/>
+                        </VBox>
+                    </HBox>
 
-                    <VBox spacing="4">
-                        <Label text="Platform" styleClass="meta-label"/>
-                        <HBox fx:id="platformBadge" styleClass="platform-badge-large" alignment="CENTER_LEFT" spacing="8">
-                            <Label fx:id="platformLabel" text="Steam" styleClass="meta-value"/>
-                        </HBox>
-                    </VBox>
-
-                    <VBox spacing="4">
-                        <Label text="Release Date" styleClass="meta-label"/>
-                        <Label fx:id="releaseDateLabel" text="Unknown" styleClass="meta-value"/>
-                    </VBox>
+                    <HBox spacing="16" alignment="CENTER_LEFT" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <StackPane styleClass="stat-icon-container">
+                            <FontIcon iconLiteral="fas-calendar-alt" iconSize="24" styleClass="stat-icon"/>
+                        </StackPane>
+                        <VBox spacing="2">
+                            <Label text="LAST PLAYED" styleClass="stat-label"/>
+                            <Label fx:id="lastPlayedLabel" text="Never" styleClass="stat-value"/>
+                        </VBox>
+                    </HBox>
                 </HBox>
-
             </VBox>
-        </HBox>
 
+            <!-- Right Column: Add margin to the LEFT to create the gap -->
+            <VBox spacing="0" styleClass="metadata-panel" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <GridPane.margin>
+                    <Insets left="8"/>
+                </GridPane.margin>
+
+                <Label text="GAME INFO" styleClass="panel-header"/>
+
+                <VBox spacing="0" styleClass="metadata-rows">
+                    <!-- Developer -->
+                    <HBox styleClass="metadata-row" alignment="CENTER_LEFT">
+                        <FontIcon iconLiteral="fas-building" iconSize="14" styleClass="metadata-icon"/>
+                        <Label text="Developer" styleClass="metadata-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="developerLabel" text="Unknown" styleClass="metadata-value"/>
+                    </HBox>
+
+                    <!-- Publisher -->
+                    <HBox styleClass="metadata-row" alignment="CENTER_LEFT">
+                        <FontIcon iconLiteral="fas-globe" iconSize="14" styleClass="metadata-icon"/>
+                        <Label text="Publisher" styleClass="metadata-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="publisherLabel" text="Unknown" styleClass="metadata-value"/>
+                    </HBox>
+
+                    <!-- Release Date -->
+                    <HBox styleClass="metadata-row" alignment="CENTER_LEFT">
+                        <FontIcon iconLiteral="fas-calendar" iconSize="14" styleClass="metadata-icon"/>
+                        <Label text="Released" styleClass="metadata-label"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="releaseDateLabel" text="Unknown" styleClass="metadata-value"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="12" styleClass="tags-section">
+                    <Label text="Tags" styleClass="tags-header"/>
+                    <FlowPane fx:id="tagsContainer" hgap="8" vgap="8" styleClass="tags-flow"/>
+                </VBox>
+            </VBox>
+        </GridPane>
     </VBox>
-
-</StackPane>
+</ScrollPane>
 
