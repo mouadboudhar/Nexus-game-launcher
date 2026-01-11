@@ -603,7 +603,7 @@ public class GameDetailsController implements Initializable {
         deleteTask.setOnSucceeded(e -> Platform.runLater(() -> {
             if (mainController != null) {
                 mainController.showToast("Game Deleted", currentGame.getTitle() + " has been removed.");
-                mainController.backToLibrary();
+                mainController.backToLibraryAndRefresh();
             }
         }));
 
@@ -654,7 +654,7 @@ public class GameDetailsController implements Initializable {
         ignoreTask.setOnSucceeded(e -> Platform.runLater(() -> {
             if (mainController != null) {
                 mainController.showToast("Game Hidden", currentGame.getTitle() + " has been hidden from your library.");
-                mainController.backToLibrary();
+                mainController.backToLibraryAndRefresh();
             }
         }));
 

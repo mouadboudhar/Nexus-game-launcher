@@ -122,8 +122,22 @@ public class MainController implements Initializable {
 
     /**
      * Return to library view from game details.
+     * Does NOT refresh the game list to avoid flickering - just shows cached view.
      */
     public void backToLibrary() {
+        setActiveNav(navLibrary);
+        if (libraryView != null) {
+            rootPane.setCenter(libraryView);
+        } else {
+            loadLibraryView();
+        }
+    }
+
+    /**
+     * Return to library view and force a refresh of the game list.
+     * Use this when game data has changed (e.g., after ignoring/deleting a game).
+     */
+    public void backToLibraryAndRefresh() {
         setActiveNav(navLibrary);
         if (libraryView != null && libraryController != null) {
             libraryController.refreshGames();

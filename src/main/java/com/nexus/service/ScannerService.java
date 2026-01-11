@@ -3,6 +3,7 @@ package com.nexus.service;
 import com.nexus.model.Game;
 import com.nexus.model.Game.Platform;
 import com.nexus.model.Game.Status;
+import com.nexus.model.IgnoredGame;
 import com.nexus.repository.GameRepository;
 import com.nexus.repository.IgnoredGameRepository;
 
@@ -105,12 +106,18 @@ public class ScannerService {
         this.gameRepository = new GameRepository();
         this.ignoredGameRepository = new IgnoredGameRepository();
         this.metadataService = new CombinedMetadataService();
+
+        // Migrate existing ignored games to have normalizedTitle
+        this.ignoredGameRepository.migrateNormalizedTitles();
     }
 
     public ScannerService(GameRepository gameRepository, MetadataService metadataService) {
         this.gameRepository = gameRepository;
         this.ignoredGameRepository = new IgnoredGameRepository();
         this.metadataService = metadataService;
+
+        // Migrate existing ignored games to have normalizedTitle
+        this.ignoredGameRepository.migrateNormalizedTitles();
     }
 
     public List<Game> fullRescan() {
@@ -126,47 +133,110 @@ public class ScannerService {
     public List<Game> scanAll() {
         System.out.println("[ScannerService] Starting full scan...");
 
-        // Get list of ignored game unique IDs
+        // Get ALL ignore data for comprehensive matching
         Set<String> ignoredIds = new HashSet<>(ignoredGameRepository.findAllUniqueIds());
-        System.out.println("[ScannerService] Found " + ignoredIds.size() + " ignored games to skip");
+        Set<String> ignoredNormalizedTitles = new HashSet<>(ignoredGameRepository.findAllNormalizedTitles());
+        Set<String> ignoredInstallPaths = new HashSet<>(ignoredGameRepository.findAllInstallPaths());
+
+        System.out.println("[ScannerService] Found " + ignoredIds.size() + " ignored uniqueIds, "
+            + ignoredNormalizedTitles.size() + " ignored titles, "
+            + ignoredInstallPaths.size() + " ignored paths");
+
+        // Create a combined ignore checker
+        IgnoreChecker ignoreChecker = new IgnoreChecker(ignoredIds, ignoredNormalizedTitles, ignoredInstallPaths);
 
         Map<String, Game> gameByUniqueId = new LinkedHashMap<>();
         Set<String> seenNormalizedTitles = new HashSet<>();
 
         // 1. Scan Steam
-        addGames(gameByUniqueId, seenNormalizedTitles, scanSteam(), "Steam", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanSteam(), "Steam", ignoreChecker);
 
         // 2. Scan Epic Games
-        addGames(gameByUniqueId, seenNormalizedTitles, scanEpic(), "Epic", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanEpic(), "Epic", ignoreChecker);
 
         // 3. Scan Riot Games (League, VALORANT, etc.)
-        addGames(gameByUniqueId, seenNormalizedTitles, scanRiotGames(), "Riot", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanRiotGames(), "Riot", ignoreChecker);
 
         // 4. Scan Battle.net (WoW, Diablo, Overwatch, etc.)
-        addGames(gameByUniqueId, seenNormalizedTitles, scanBattleNet(), "Battle.net", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanBattleNet(), "Battle.net", ignoreChecker);
 
         // 5. Scan EA App / Origin
-        addGames(gameByUniqueId, seenNormalizedTitles, scanEAApp(), "EA", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanEAApp(), "EA", ignoreChecker);
 
         // 6. Scan known standalone games from registry
-        addGames(gameByUniqueId, seenNormalizedTitles, scanKnownStandalones(), "Standalone", ignoredIds);
+        addGames(gameByUniqueId, seenNormalizedTitles, scanKnownStandalones(), "Standalone", ignoreChecker);
 
         List<Game> allGames = new ArrayList<>(gameByUniqueId.values());
-        List<Game> mergedGames = mergeWithDatabase(allGames);
+        List<Game> mergedGames = mergeWithDatabase(allGames, ignoreChecker);
+
+        // Sort alphabetically by title to ensure consistent ordering
+        mergedGames.sort((a, b) -> {
+            String titleA = a.getTitle() != null ? a.getTitle().toLowerCase() : "";
+            String titleB = b.getTitle() != null ? b.getTitle().toLowerCase() : "";
+            return titleA.compareTo(titleB);
+        });
+
         System.out.println("[ScannerService] Scan complete. Total games: " + mergedGames.size());
 
         return mergedGames;
     }
 
-    private void addGames(Map<String, Game> gameMap, Set<String> seenTitles, List<Game> games, String source, Set<String> ignoredIds) {
+    /**
+     * Helper class to check if a game should be ignored using multiple criteria.
+     */
+    private static class IgnoreChecker {
+        private final Set<String> ignoredIds;
+        private final Set<String> ignoredNormalizedTitles;
+        private final Set<String> ignoredInstallPaths;
+
+        IgnoreChecker(Set<String> ignoredIds, Set<String> ignoredNormalizedTitles, Set<String> ignoredInstallPaths) {
+            this.ignoredIds = ignoredIds;
+            this.ignoredNormalizedTitles = ignoredNormalizedTitles;
+            this.ignoredInstallPaths = ignoredInstallPaths;
+        }
+
+        /**
+         * Checks if a game should be ignored based on uniqueId, normalized title, OR install path.
+         */
+        boolean shouldIgnore(Game game) {
+            // Check by unique ID
+            if (game.getUniqueId() != null && ignoredIds.contains(game.getUniqueId())) {
+                return true;
+            }
+
+            // Check by normalized title
+            String normalizedTitle = IgnoredGame.normalizeTitle(game.getTitle());
+            if (!normalizedTitle.isEmpty() && ignoredNormalizedTitles.contains(normalizedTitle)) {
+                return true;
+            }
+
+            // Check by install path (normalize paths for comparison)
+            String installPath = game.getInstallPath();
+            if (installPath != null && !installPath.isEmpty()) {
+                String normalizedPath = installPath.toLowerCase().replace("/", "\\");
+                for (String ignoredPath : ignoredInstallPaths) {
+                    if (ignoredPath != null) {
+                        String normalizedIgnoredPath = ignoredPath.toLowerCase().replace("/", "\\");
+                        if (normalizedPath.equals(normalizedIgnoredPath)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private void addGames(Map<String, Game> gameMap, Set<String> seenTitles, List<Game> games, String source, IgnoreChecker ignoreChecker) {
         System.out.println("[ScannerService] Found " + games.size() + " " + source + " games");
         for (Game g : games) {
             String normalizedTitle = normalizeTitle(g.getTitle());
             String uniqueId = g.getUniqueId();
 
-            // Skip if game is ignored
-            if (uniqueId != null && ignoredIds.contains(uniqueId)) {
-                System.out.println("[ScannerService] Skipping ignored game: " + g.getTitle());
+            // Skip if game is ignored (comprehensive check)
+            if (ignoreChecker.shouldIgnore(g)) {
+                System.out.println("[ScannerService] Skipping ignored game: " + g.getTitle() + " (uniqueId: " + uniqueId + ")");
                 continue;
             }
 
@@ -901,15 +971,28 @@ public class ScannerService {
 
     // ==================== DATABASE OPERATIONS ====================
 
-    private List<Game> mergeWithDatabase(List<Game> scannedGames) {
+    private List<Game> mergeWithDatabase(List<Game> scannedGames, IgnoreChecker ignoreChecker) {
         List<Game> result = new ArrayList<>();
         Set<String> processedTitles = new HashSet<>();
+        Set<String> processedUniqueIds = new HashSet<>();
 
         for (Game scanned : scannedGames) {
             try {
+                String uniqueId = scanned.getUniqueId();
+
+                // Double-check: Skip if game should be ignored (comprehensive check)
+                if (ignoreChecker.shouldIgnore(scanned)) {
+                    System.out.println("[ScannerService] Skipping ignored game in merge: " + scanned.getTitle());
+                    continue;
+                }
+
                 String normalizedTitle = normalizeTitle(scanned.getTitle());
                 if (processedTitles.contains(normalizedTitle)) continue;
                 processedTitles.add(normalizedTitle);
+
+                if (uniqueId != null) {
+                    processedUniqueIds.add(uniqueId);
+                }
 
                 Optional<Game> existing = gameRepository.findByUniqueId(scanned.getUniqueId());
 
@@ -944,6 +1027,20 @@ public class ScannerService {
             } catch (Exception e) {
                 System.err.println("[ScannerService] Error saving: " + scanned.getTitle() + " - " + e.getMessage());
             }
+        }
+
+        // Clean up: Remove any games from DB that should be ignored (zombie cleanup)
+        // This catches games that were added before being ignored or with different uniqueIds
+        try {
+            List<Game> allDbGames = gameRepository.findAll();
+            for (Game dbGame : allDbGames) {
+                if (ignoreChecker.shouldIgnore(dbGame)) {
+                    System.out.println("[ScannerService] Removing zombie ignored game from DB: " + dbGame.getTitle());
+                    gameRepository.delete(dbGame.getId());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[ScannerService] Error during zombie cleanup: " + e.getMessage());
         }
 
         return result;

@@ -97,6 +97,49 @@ public class IgnoredGameRepository {
     }
 
     /**
+     * Get all ignored normalized titles.
+     */
+    public List<String> findAllNormalizedTitles() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("SELECT ig.normalizedTitle FROM IgnoredGame ig WHERE ig.normalizedTitle IS NOT NULL", String.class).list();
+        }
+    }
+
+    /**
+     * Get all ignored install paths.
+     */
+    public List<String> findAllInstallPaths() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("SELECT ig.installPath FROM IgnoredGame ig WHERE ig.installPath IS NOT NULL", String.class).list();
+        }
+    }
+
+    /**
+     * Check if a game is ignored by normalized title.
+     */
+    public boolean isIgnoredByNormalizedTitle(String normalizedTitle) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery("SELECT COUNT(ig) FROM IgnoredGame ig WHERE ig.normalizedTitle = :title", Long.class)
+                    .setParameter("title", normalizedTitle)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    /**
+     * Check if a game is ignored by install path.
+     */
+    public boolean isIgnoredByInstallPath(String installPath) {
+        if (installPath == null || installPath.isEmpty()) return false;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery("SELECT COUNT(ig) FROM IgnoredGame ig WHERE ig.installPath = :path", Long.class)
+                    .setParameter("path", installPath)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    /**
      * Delete an ignored game by ID.
      */
     public void delete(Long id) {
@@ -150,6 +193,37 @@ public class IgnoredGameRepository {
     public long count() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("SELECT COUNT(ig) FROM IgnoredGame ig", Long.class).uniqueResult();
+        }
+    }
+
+    /**
+     * Migrates existing ignored games to populate the normalizedTitle field.
+     * Call this once on startup to ensure all records have the field populated.
+     */
+    public void migrateNormalizedTitles() {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+
+            List<IgnoredGame> gamesWithoutNormalizedTitle = session
+                .createQuery("FROM IgnoredGame WHERE normalizedTitle IS NULL OR normalizedTitle = ''", IgnoredGame.class)
+                .list();
+
+            for (IgnoredGame ig : gamesWithoutNormalizedTitle) {
+                if (ig.getTitle() != null) {
+                    ig.setNormalizedTitle(com.nexus.model.IgnoredGame.normalizeTitle(ig.getTitle()));
+                    session.merge(ig);
+                    System.out.println("[IgnoredGameRepository] Migrated normalizedTitle for: " + ig.getTitle());
+                }
+            }
+
+            transaction.commit();
+            System.out.println("[IgnoredGameRepository] Migration complete. Updated " + gamesWithoutNormalizedTitle.size() + " records.");
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            System.err.println("[IgnoredGameRepository] Migration failed: " + e.getMessage());
         }
     }
 }

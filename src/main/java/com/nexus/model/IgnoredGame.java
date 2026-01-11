@@ -19,10 +19,13 @@ public class IgnoredGame implements Serializable {
     @Column(nullable = false)
     private String title;
 
-    @Column(name = "install_path", unique = true)
+    @Column(name = "normalized_title")
+    private String normalizedTitle;
+
+    @Column(name = "install_path")
     private String installPath;
 
-    @Column(name = "unique_id", unique = true)
+    @Column(name = "unique_id")
     private String uniqueId;
 
     @Column(name = "ignored_at")
@@ -34,9 +37,18 @@ public class IgnoredGame implements Serializable {
 
     public IgnoredGame(String title, String installPath, String uniqueId) {
         this.title = title;
+        this.normalizedTitle = normalizeTitle(title);
         this.installPath = installPath;
         this.uniqueId = uniqueId;
         this.ignoredAt = LocalDateTime.now();
+    }
+
+    /**
+     * Normalizes a title for consistent matching.
+     */
+    public static String normalizeTitle(String title) {
+        if (title == null) return "";
+        return title.toLowerCase().replaceAll("[^a-z0-9]", "").trim();
     }
 
     // Getters and Setters
@@ -44,7 +56,13 @@ public class IgnoredGame implements Serializable {
     public void setId(Long id) { this.id = id; }
 
     public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setTitle(String title) {
+        this.title = title;
+        this.normalizedTitle = normalizeTitle(title);
+    }
+
+    public String getNormalizedTitle() { return normalizedTitle; }
+    public void setNormalizedTitle(String normalizedTitle) { this.normalizedTitle = normalizedTitle; }
 
     public String getInstallPath() { return installPath; }
     public void setInstallPath(String installPath) { this.installPath = installPath; }

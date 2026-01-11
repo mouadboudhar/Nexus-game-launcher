@@ -28,6 +28,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -55,6 +56,9 @@ public class LibraryController implements Initializable {
 
     private Task<?> currentScanTask;
     private boolean isScanning = false;
+
+    // Cache of currently displayed games to avoid unnecessary re-renders
+    private List<Game> cachedGames = null;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -345,9 +349,20 @@ public class LibraryController implements Initializable {
     }
 
     private void displayGames(List<Game> games) {
+        // Sort games alphabetically by title for consistent ordering
+        List<Game> sortedGames = new ArrayList<>(games);
+        sortedGames.sort((a, b) -> {
+            String titleA = a.getTitle() != null ? a.getTitle().toLowerCase() : "";
+            String titleB = b.getTitle() != null ? b.getTitle().toLowerCase() : "";
+            return titleA.compareTo(titleB);
+        });
+
+        // Cache the sorted games
+        this.cachedGames = sortedGames;
+
         gamesGrid.getChildren().clear();
 
-        for (Game game : games) {
+        for (Game game : sortedGames) {
             GameCard card = new GameCard(game);
             card.setOnCardClick(() -> openGameDetails(game));
             card.setOnPlayClick(() -> launchGame(game));
